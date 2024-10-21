@@ -1,0 +1,99 @@
+#docker-compose.yml
+services:
+  # MariaDB service
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    container_name: react-kalyoke-db
+    environment:
+      EMYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./volumes/db_data:/var/lib/mysql
+    tty: true
+    stdin_open: true
+    networks:
+      react-kalyoke-net:
+        ipv4_address: 172.18.0.2
+
+  # Flask service
+  python:
+    build:
+      context: ./python
+      dockerfile: Dockerfile
+    container_name: react-kalyoke-flask
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - socket:/socket  # uwsgi.sockを共有するためのボリューム
+      - ./volumes/musics:/musics  # 共有ボリューム
+    depends_on:
+      - db
+    networks:
+      react-kalyoke-net:
+        ipv4_address: 172.18.0.3
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+
+  # React service
+  react:
+    build:
+      context: ./react
+      dockerfile: Dockerfile
+    container_name: react-kalyoke-web
+    environment:
+      REACT_APP_HOST_URL: ${REACT_APP_HOST_URL}
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./volumes/musics:/musics  # 共有ボリューム
+      - socket:/socket  # uwsgi.sockを共有するためのボリューム
+    networks:
+      react-kalyoke-net:
+        ipv4_address: 172.18.0.4
+
+  # nginx:
+  #   build:
+  #     context: ./nginx
+  #     dockerfile: Dockerfile
+  #   container_name: react-kalyoke-nginx
+  #   environment:
+  #     REACT_APP_HOST_URL: ${REACT_APP_HOST_URL}
+  #   ports:
+  #     - '80:80'
+  #     - '443:443'
+  #   volumes:
+  #     - ./volumes/musics:/musics  # 共有ボリューム
+  #     - socket:/socket  # uwsgi.sockを共有するためのボリューム
+  #   networks:
+  #     react-kalyoke-net:
+  #       ipv4_address: 172.18.0.5
+
+volumes:
+  db_data:
+  musics:  # 共有ボリュームの定義
+  socket:
+
+networks:
+  react-kalyoke-net:
+    driver: bridge
+    name: react-kalyoke-net
+    ipam:
+     driver: default
+     config:
+       - subnet: 172.18.0.0/24

@@ -1,0 +1,23 @@
+/volumes
+*.conf
+/python/init.sh
+/react/docker-entrypoint.sh
+
+# 環境ファイル
+.env
+
+# 設定ファイル（デフォルト以外のもの）
+uwsgi.ini
+
+# 秘密鍵
+*.pem
+*.key
+*.crt
+
+# キャッシュとログ
+*.log
+.cache/
+
+# ビルド成果物
+dist/
+node_modules/
