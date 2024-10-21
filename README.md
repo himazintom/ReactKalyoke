@@ -22,7 +22,7 @@ systemctl restart nginx
 ・mariaDBだけ起動
 cd db
 docker build -t react-kalyoke-db .
-docker run -d --rm --name react-kalyoke-db -v C:/Product/Website/react-kalyoke/db/db_data:/var/lib/mysql -p 3306:3306 react-kalyoke-db
+docker run -d --rm --name react-kalyoke-db -v /db/db_data:/var/lib/mysql -p 3306:3306 react-kalyoke-db
 
 
 ・mariaDBにアクセス
