@@ -25,17 +25,11 @@ RUN npm run build
 
 # 静的ファイルを提供するために、Nginxを使用
 FROM nginx:alpine
-
-# Reactビルド成果物をNginxのHTMLディレクトリにコピー
+# 必要なファイルをコピー
 COPY --from=0 /app/build /usr/share/nginx/html
-
-#https用の暗号カギを指定位置へコピー
 COPY keys /keys
-# Nginxの設定ファイルをコンテナ内の適切なディレクトリにコピー
 COPY conf.d /etc/nginx/conf.d
 COPY nginx.conf /etc/nginx/nginx.conf
-
-# エントリーポイントスクリプトをコピー
 COPY docker-entrypoint.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
