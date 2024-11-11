@@ -3,20 +3,22 @@ import json
 import datetime
 import os
 
-host_aa = os.getenv('DB_HOST')
-data_base = os.getenv('DB_NAME')
-user_aa = os.getenv('DB_USER')
-password_aa = os.getenv('DB_PASSWORD')
+host_aa = os.getenv("DB_HOST")
+data_base = os.getenv("DB_NAME")
+user_aa = os.getenv("DB_USER")
+password_aa = os.getenv("DB_PASSWORD")
+
 
 def connect_to_database():
     return mysql.connector.connect(
-        user=user_aa, 
-        password=password_aa, 
-        host=host_aa, 
+        user=user_aa,
+        password=password_aa,
+        host=host_aa,
         database=data_base,
-        charset='utf8mb4',
-        collation='utf8mb4_general_ci'
+        charset="utf8mb4",
+        collation="utf8mb4_general_ci",
     )
+
 
 def close_database_connection(cursor, conn):
     """データベース接続を終了する"""
@@ -35,10 +37,26 @@ def get_id_from_database(table, column_name, value):
     if table not in ["videos", "users"]:
         raise ValueError("無効なテーブル名です。")
     if table == "videos":
-        if column_name not in ["site", "videoid", "title", "lyric", "folder_path", "register_date", "update_date"]:
+        if column_name not in [
+            "site",
+            "videoid",
+            "title",
+            "lyric",
+            "folder_path",
+            "register_date",
+            "update_date",
+        ]:
             raise ValueError("無効なカラム名です。")
     if table == "users":
-        if column_name not in ["username", "email", "password", "status", "token", "history", "created_at"]:
+        if column_name not in [
+            "username",
+            "email",
+            "password",
+            "status",
+            "token",
+            "history",
+            "created_at",
+        ]:
             raise ValueError("無効なカラム名です。")
 
     conn = connect_to_database()
@@ -60,18 +78,37 @@ def get_id_from_database(table, column_name, value):
 
     finally:
         close_database_connection(cursor, conn)
-    
+
+
 def get_data_from_database(table, id, column_name):
-    print("status",table, id, column_name)
+    print("status", table, id, column_name)
 
     # テーブル名のチェックを追加
     if table not in ["videos", "users"]:
         raise ValueError("無効なテーブル名です。")
-    if table == "videos" and column_name not in ["site", "videoid", "title", "lyric", "folder_path", "register_date", "update_date", "*"]:
+    if table == "videos" and column_name not in [
+        "site",
+        "videoid",
+        "title",
+        "lyric",
+        "folder_path",
+        "register_date",
+        "update_date",
+        "*",
+    ]:
         raise ValueError("無効なカラム名です。")
-    if table == "users" and column_name not in ["username", "email", "password", "status", "token", "singed_history", "created_at", "*"]:
+    if table == "users" and column_name not in [
+        "username",
+        "email",
+        "password",
+        "status",
+        "token",
+        "singed_history",
+        "created_at",
+        "*",
+    ]:
         raise ValueError("無効なカラム名です。")
-    
+
     conn = connect_to_database()
     cursor = conn.cursor()
     try:
@@ -88,31 +125,39 @@ def get_data_from_database(table, id, column_name):
         return None
     finally:
         close_database_connection(cursor, conn)
-    
-def add_to_videos_database(datas):#videosデータベースに曲情報を追加
+
+
+def add_to_videos_database(datas):  # videosデータベースに曲情報を追加
     conn = connect_to_database()
     cursor = conn.cursor()
-    add_video = ("INSERT INTO videos "
-                 "(site, videoid, title, lyric, folder_path, register_date, update_date)"
-                 "VALUES (%(site)s, %(videoid)s, %(title)s, %(lyric)s, %(folder_path)s, %(register_date)s, %(update_date)s)")
+    add_video = (
+        "INSERT INTO videos "
+        "(site, videoid, title, lyric, folder_path, register_date, update_date) "
+        "VALUES (%(site)s, %(videoid)s, %(title)s, %(lyric)s, %(folder_path)s, "
+        "%(register_date)s, %(update_date)s)"
+    )
     cursor.execute(add_video, datas)
     conn.commit()
     close_database_connection(cursor, conn)
 
-def update_videos_database(videoid, lyric):#videosデータベースの歌われた情報を更新
+
+def update_videos_database(videoid, lyric):  # videosデータベースの歌われた情報を更新
     conn = connect_to_database()
     cursor = conn.cursor()
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if lyric is not None:
-        update_video = ("UPDATE videos SET update_date = %s, lyric = %s WHERE videoid = %s")
+        update_video = (
+            "UPDATE videos SET update_date = %s, lyric = %s WHERE videoid = %s"
+        )
         cursor.execute(update_video, (current_time, lyric, videoid))
     else:
-        update_video = ("UPDATE videos SET update_date = %s WHERE videoid = %s")
+        update_video = "UPDATE videos SET update_date = %s WHERE videoid = %s"
         cursor.execute(update_video, (current_time, videoid))
     conn.commit()
     close_database_connection(cursor, conn)
 
-def get_latest_videoids():#最近うたわれた順で5曲を取得
+
+def get_latest_videoids():  # 最近うたわれた順で5曲を取得
     conn = connect_to_database()
     cursor = conn.cursor(dictionary=True)
     query = "SELECT videoid, title FROM videos ORDER BY update_date DESC LIMIT 5"
@@ -120,6 +165,7 @@ def get_latest_videoids():#最近うたわれた順で5曲を取得
     rows = cursor.fetchall()
     close_database_connection(cursor, conn)
     return rows
+
 
 def get_videoid_from_title_str(search_word):
     try:
@@ -140,25 +186,33 @@ def get_videoid_from_title_str(search_word):
         return []
 
 
-def add_user_data_signup(email, password, token):#新しくユーザー情報を登録する
-    result=get_id_from_database("users", "email", email)
-    if result:#もし、htmlで無理やり存在するメルアドで新規登録を仕掛けようとしてたら...
-        return "exist"#
+def add_user_data_signup(email, password, token):  # 新しくユーザー情報を登録する
+    result = get_id_from_database("users", "email", email)
+    if (
+        result
+    ):  # もし、htmlで無理やり存在するメルアドで新規登録を仕掛けようとしてたら...
+        return "exist"  #
     try:
         conn = connect_to_database()
         cursor = conn.cursor()
-        
+
         # ユーザーIDを生成するために最新のIDを取得
         cursor.execute("SELECT MAX(id) FROM users")
         max_id_result = cursor.fetchone()
-        next_id = max_id_result[0] + 1 if max_id_result[0] else 1  # 最大IDがNoneでなければ+1、Noneなら1を設定
-        
+        next_id = (
+            max_id_result[0] + 1 if max_id_result[0] else 1
+        )  # 最大IDがNoneでなければ+1、Noneなら1を設定
+
         # ユーザー名を生成（例: "kl000043"）
         username = f"kl{next_id:06}"  # nextidの左側を6桁になるまで0で埋める
-        
-        add_user_query = "INSERT INTO users (username, email, password, status, token) VALUES (%s, %s, %s, %s, %s)"
+
+        # クエリを複数行に分割して行の長さを短くする
+        add_user_query = (
+            "INSERT INTO users (username, email, password, status, token) "
+            "VALUES (%s, %s, %s, %s, %s)"
+        )
         cursor.execute(add_user_query, (username, email, password, "temp", token))
-        conn.commit()# データベースに変更をコミット
+        conn.commit()  # データベースに変更をコミット
     except mysql.connector.Error as err:
         print(f"データベース操作中にエラーが発生しました: {err}")
         return "fail"
@@ -166,51 +220,63 @@ def add_user_data_signup(email, password, token):#新しくユーザー情報を
         close_database_connection(cursor, conn)
     return "success"
 
-#アドレスとパスワードがあっているか確認
-def check_user_data_login(email, input_password):
-    user_id=get_id_from_database("users", "email", email)
-    if user_id:#もしデータベースにアドレスがあって
-        result=get_data_from_database("users", user_id, "password")
-        if result==input_password:
-            return "success"# パスワードが一致する場合
-        return "fail"# パスワードが一致しない
-    return "fail"#アドレスが存在しない場合
 
-def validate_token(token):#tokenの期限が過ぎていないか、またdbに一致するものがあるかを調べる
+# アドレスとパスワードがあっているか確認
+def check_user_data_login(email, input_password):
+    user_id = get_id_from_database("users", "email", email)
+    if user_id:  # もしデータベースにアドレスがあって
+        result = get_data_from_database("users", user_id, "password")
+        if result == input_password:
+            return "success"  # パスワードが一致する場合
+        return "fail"  # パスワードが一致しない
+    return "fail"  # アドレスが存在しない場合
+
+
+def validate_token(
+    token,
+):  # tokenの期限が過ぎていないか、またdbに一致するものがあるかを調べる
     conn = connect_to_database()
     cursor = conn.cursor(dictionary=True)
     query = "SELECT created_at FROM users WHERE token = %s"
     cursor.execute(query, (token,))
     row = cursor.fetchone()
     close_database_connection(cursor, conn)
-    
+
     if row:
-        token_time = row['created_at']
+        token_time = row["created_at"]
         current_time = datetime.datetime.now()
         if (current_time - token_time) <= datetime.timedelta(hours=24):
             return True
     return False
 
-def update_user_auth_status(token):#ユーザーのステータスをtempからfreeにい昇格してよいか
+
+def update_user_auth_status(
+    token,
+):  # ユーザーのステータスをtempからfreeにい昇格してよいか
     conn = connect_to_database()
     cursor = conn.cursor()
     # トークンに該当するユーザーのstatusを"temp"から"Free"に更新し、トークンを削除するクエリ
-    update_query = "UPDATE users SET status = 'free', token = NULL WHERE token = %s AND status = 'temp'"
+    update_query = (
+        "UPDATE users SET status = 'free', token = NULL "
+        "WHERE token = %s AND status = 'temp'"
+    )
     cursor.execute(update_query, (token,))
     affected_rows = cursor.rowcount  # 更新された行数を取得
     conn.commit()
     close_database_connection(cursor, conn)
     return affected_rows > 0  # 1行以上更新された場合はTrue、そうでなければFalseを返す
 
-def save_user_token(user_id, token):#ユーザーのトークンを保存する
+
+def save_user_token(user_id, token):  # ユーザーのトークンを保存する
     conn = connect_to_database()
     cursor = conn.cursor()
     update_query = "UPDATE users SET token = %s WHERE id = %s"
     cursor.execute(update_query, (token, user_id))
     conn.commit()
     close_database_connection(cursor, conn)
-    
-def change_password(email, new_password):#ユーザーのパスワードの変更
+
+
+def change_password(email, new_password):  # ユーザーのパスワードの変更
     conn = connect_to_database()
     cursor = conn.cursor()
     # パスワードを更新するクエリに変更
@@ -219,7 +285,8 @@ def change_password(email, new_password):#ユーザーのパスワードの変�
     conn.commit()  # データベースに変更をコミット
     close_database_connection(cursor, conn)
 
-def delete_user_token(id):#ユーザーのトークンを削除する
+
+def delete_user_token(id):  # ユーザーのトークンを削除する
     conn = connect_to_database()
     cursor = conn.cursor()
     query = "UPDATE users SET token = NULL WHERE id = %s"
@@ -227,7 +294,8 @@ def delete_user_token(id):#ユーザーのトークンを削除する
     conn.commit()
     close_database_connection(cursor, conn)
 
-def change_user_name(user_id,new_username):#ユーザーの名前を変更する
+
+def change_user_name(user_id, new_username):  # ユーザーの名前を変更する
     conn = connect_to_database()
     cursor = conn.cursor()
     query = "UPDATE users SET username = %s WHERE id = %s"
@@ -235,16 +303,13 @@ def change_user_name(user_id,new_username):#ユーザーの名前を変更する
     conn.commit()
     close_database_connection(cursor, conn)
 
-def save_singed_history(user_id, videoid, pitch):#ユーザーの歌った履歴を保存する
-    id=get_id_from_database("videos", "videoid", videoid)
+
+def save_singed_history(user_id, videoid, pitch):  # ユーザーの歌った履歴を保存する
+    id = get_id_from_database("videos", "videoid", videoid)
     if id:
         title = get_data_from_database("videos", id, "title")
         status = get_data_from_database("users", user_id, "status")
-        add_datas={
-            "videoid": videoid,
-            "pitch": pitch,
-            "title": title
-        }
+        add_datas = {"videoid": videoid, "pitch": pitch, "title": title}
         datas = get_data_from_database("users", user_id, "singed_history")
         if datas:
             datas = json.loads(datas)
@@ -252,11 +317,11 @@ def save_singed_history(user_id, videoid, pitch):#ユーザーの歌った履歴
             datas = [data for data in datas if data["videoid"] != videoid]
             # 新しいデータを先頭に追加
             datas.insert(0, add_datas)
-            if status=="free":
+            if status == "free":
                 datas = datas[:10]
-            if status=="singer":
+            if status == "singer":
                 datas = datas[:100]
-            if status=="singer":
+            if status == "singer":
                 datas = datas[:200]
         else:
             datas = [add_datas]
@@ -267,12 +332,15 @@ def save_singed_history(user_id, videoid, pitch):#ユーザーの歌った履歴
         conn.commit()
         close_database_connection(cursor, conn)
 
+
 def get_random_song(requestCount):
     try:
         conn = connect_to_database()
         cursor = conn.cursor(dictionary=True)
         query = "SELECT videoid, lyric, title FROM videos ORDER BY RAND() LIMIT %s"
-        cursor.execute(query, (int(requestCount),))  # requestCountを整数に変換してからクエリに渡す
+        cursor.execute(
+            query, (int(requestCount),)
+        )  # requestCountを整数に変換してからクエリに渡す
         rows = cursor.fetchall()  # fetchall()を使って全ての行を取得
         close_database_connection(cursor, conn)
         if rows:
@@ -282,5 +350,3 @@ def get_random_song(requestCount):
     except Exception as e:
         print(f"Error getting random song: {e}")
         return None
-
-

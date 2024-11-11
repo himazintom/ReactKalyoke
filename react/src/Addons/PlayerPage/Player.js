@@ -16,11 +16,9 @@ import MicIcon from '@mui/icons-material/Mic';
 
 import * as FormPost from './FormPost';
 
-function Player() {
-  const hostUrl = process.env.REACT_APP_HOST_URL;//url
-  console.log("hostUrl ",hostUrl );
+const Player = () => {
+  const hostUrl = process.env.REACT_APP_HOST_URL;
 
-  //form
   const [yourHistory, setYourHistory] = useState([]);
   useEffect(() => {
     const yourHistory = JSON.parse(Cookies.get('yourHistory') || '[]');

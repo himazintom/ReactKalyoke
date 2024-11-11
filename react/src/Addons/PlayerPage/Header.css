@@ -26,7 +26,6 @@
   justify-content: center;
   height: 32px;
   line-height: 80%; /* 高さを一定に保つ */
-  
 }
 
 .header-item::after {

@@ -1,38 +1,38 @@
 from flask import Flask, jsonify, request
-# from Addons import demucs_route
+
 import Addons.DEMUCS.KalyokeDatabase as KDB
 import Addons.DEMUCS.Demucs as ADD
 import Addons.DEMUCS.youtubeDL as YDL
 import Addons.DEMUCS.GetLyricBySites as GLBS
-# from flask_cors import CORS
+
 import datetime
 from re import match
 
 
 app = Flask(__name__)
-# demucs_route.init(app)
-# CORS(app)  # すべてのオリジンからのリクエストを許可
 
-output_dir="/musics"
+output_dir = "/musics"
+
 
 def remove_list_in_url(url):
-    index=url.find("&list")
-    if index==-1:
-        url_non_list=url
+    index = url.find("&list")
+    if index == -1:
+        url_non_list = url
     else:
-        url_non_list=url[:index]
+        url_non_list = url[:index]
     return url_non_list
 
 
-@app.route('/api/check_video_exist', methods=['POST'])
+@app.route("/api/check_video_exist", methods=["POST"])
 def checkVideoExist():
     data = request.get_json()
     videoid = data.get("videoid")
-    id = KDB.get_id_from_database('videos', 'videoid', videoid)
+    id = KDB.get_id_from_database("videos", "videoid", videoid)
     check = True if id else False
-    return jsonify({'exist': check})
+    return jsonify({"exist": check})
 
-@app.route('/api/demucs', methods=['POST'])
+
+@app.route("/api/demucs", methods=["POST"])
 def demucs():
     try:
         # JSON データを取得
@@ -58,7 +58,7 @@ def demucs():
                 "lyric": lyric,
                 "folder_path": temp_movie_datas.get("folder_path"),
                 "register_date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "update_date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                "update_date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
             path = save_video_datas["folder_path"]
             video_title = save_video_datas["title"]
@@ -71,11 +71,7 @@ def demucs():
             video_title = KDB.get_data_from_database("videos", id, "title")
 
         history_datas = KDB.get_latest_videoids()
-        datas = {
-            "path": path,
-            "history": history_datas,
-            "title": video_title
-        }
+        datas = {"path": path, "history": history_datas, "title": video_title}
         # 正常なレスポンスを返す
         return jsonify(datas)
 
@@ -83,7 +79,8 @@ def demucs():
         # エラーが発生した場合、エラーメッセージを返す
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/update_lyric', methods=['POST'])
+
+@app.route("/api/update_lyric", methods=["POST"])
 def update_lyric():
     data = request.get_json()
     videoid = data.get("videoid")
@@ -94,78 +91,86 @@ def update_lyric():
     else:  # 曲が存在する場合、歌詞を更新する
         KDB.update_videos_database(videoid, lyric)
         return jsonify({"status": "success"}), 200
-    
-@app.route('/api/search_videoid/<videoid>')
+
+
+@app.route("/api/search_videoid/<videoid>")
 def search_videoid(videoid):
     videoid = videoid.replace(" ", "").replace("　", "")
-    
+
     # YouTube動画IDの形式チェック
     pattern = r"^[a-zA-Z0-9-_]{11}$"
     if not match(pattern, videoid):
         return jsonify({"error": "Invalid video ID format"}), 400
-    
+
     datas = {
         "videoid": videoid,
         "lyric": "",
     }
-    
+
+    print("datas", datas)
     id = KDB.get_id_from_database("videos", "videoid", videoid)
     if id:  # データベースにそのvideoIDが存在したら歌詞を返す
-        lyric = KDB.get_data_from_database('videos', id, 'lyric')
+        lyric = KDB.get_data_from_database("videos", id, "lyric")
         datas["lyric"] = lyric
-    
+
     return jsonify(datas)
 
-@app.route('/api/fetch_lyric', methods=['POST'])
+
+@app.route("/api/fetch_lyric", methods=["POST"])
 def fetchLyric():
     data = request.get_json()
     videoid = data.get("videoid")
-    id=KDB.get_id_from_database("videos", "videoid", videoid)
+    id = KDB.get_id_from_database("videos", "videoid", videoid)
     if id is not None:
         return KDB.get_data_from_database("videos", id, "lyric")
     return "Null"
 
-@app.route('/api/fetch_title', methods=['POST'])
+
+@app.route("/api/fetch_title", methods=["POST"])
 def fetchTitle():
     data = request.get_json()
     videoid = data.get("videoid")
-    id=KDB.get_id_from_database("videos", "videoid", videoid)
-    if id is not None:#DBにデータがあったら
+    id = KDB.get_id_from_database("videos", "videoid", videoid)
+    if id is not None:  # DBにデータがあったら
         return KDB.get_data_from_database("videos", id, "title")
-    
-    #DBにデータが無かったら
-    url='https://www.youtube.com/watch?v='+videoid 
-    title=YDL.get_video_title(url)#ytdlpを用いてtitle取得
+
+    # DBにデータが無かったら
+    url = "https://www.youtube.com/watch?v=" + videoid
+    title = YDL.get_video_title(url)  # ytdlpを用いてtitle取得
     if title:
         return title
     return "Null"
 
-@app.route('/api/fetch_everyone_history', methods=['POST'])
+
+@app.route("/api/fetch_everyone_history", methods=["POST"])
 def fetchEveryoneHistory():
     history_datas = KDB.get_latest_videoids()
     return history_datas
 
-@app.route('/api/fetch_random_music/<requestCount>', methods=['GET'])
+
+@app.route("/api/fetch_random_music/<requestCount>", methods=["GET"])
 def fetchRandomMusic(requestCount):
-    music_datas=KDB.get_random_song(requestCount=requestCount)
+    music_datas = KDB.get_random_song(requestCount=requestCount)
     return music_datas
 
-@app.route('/api/get_lyric_from_sites', methods=['POST'])
+
+@app.route("/api/get_lyric_from_sites", methods=["POST"])
 def getLyricFromSites():
     data = request.get_json()
     urls = data.get("urls")
-    print('urls',urls)
+    print("urls", urls)
     sorted_urls = GLBS.sort_urls_by_domain_priority(urls)
-    print('sorted_urls',sorted_urls)
+    print("sorted_urls", sorted_urls)
     lyric = ""
     for url in sorted_urls:
         if GLBS.check_domain(url):
             lyric = GLBS.get_lyric(url)
             if lyric:  # 空文字列ではない場合に処理を終了
                 break
-    return jsonify({'lyric': lyric})
+    return jsonify({"lyric": lyric})
 
-@app.route('/api/fetch_playlist_datas', methods=['POST'])
+
+@app.route("/api/fetch_playlist_datas", methods=["POST"])
 def fetchPlaylistDatas():
     data = request.get_json()
     url = data.get("url")
@@ -174,11 +179,12 @@ def fetchPlaylistDatas():
 
     return playlist_datas
 
-@app.route('/api/fetch_video_datas_by_str', methods=['POST'])
-def fetchVideoDatasByStr(): #キーワードをもとにDBからビデオデータを検索
+
+@app.route("/api/fetch_video_datas_by_str", methods=["POST"])
+def fetchVideoDatasByStr():  # キーワードをもとにDBからビデオデータを検索
     data = request.get_json()
     search_word = data.get("searchWord")
-    video_datas = YDL.get_videoid_from_title_str(search_word)
+    video_datas = KDB.get_videoid_from_title_str(search_word)
     return video_datas
 
 

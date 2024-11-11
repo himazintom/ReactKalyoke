@@ -1,5 +1,8 @@
 # ベースイメージとしてNode.jsを使用
-FROM node:16-alpine
+FROM node:23-alpine3.19
+
+# アプリケーションディレクトリを作成
+WORKDIR /app
 
 # Dockerfile内で環境変数を使いたい場合には、以下のようにする
 ARG REACT_APP_HOST_URL
@@ -8,14 +11,17 @@ ENV REACT_APP_HOST_URL=${REACT_APP_HOST_URL}
 ARG REACT_APP_API_URL
 ENV REACT_APP_API_URL=${REACT_APP_API_URL}
 
-# アプリケーションディレクトリを作成
-WORKDIR /app
+ARG REACT_APP_GOOGLE_API_KEY
+ENV REACT_APP_GOOGLE_API_KEY=${REACT_APP_GOOGLE_API_KEY}
+
+ARG REACT_APP_SEARCH_ENGINE_ID
+ENV REACT_APP_SEARCH_ENGINE_ID=${REACT_APP_SEARCH_ENGINE_ID}
 
 # package.jsonとpackage-lock.jsonをコピー
 COPY package*.json ./
 
 # 依存関係をインストール
-RUN npm install
+# RUN npm install
 
 # アプリケーションのソースコードをコピー
 COPY . .
@@ -24,7 +30,8 @@ COPY . .
 RUN npm run build
 
 # 静的ファイルを提供するために、Nginxを使用
-FROM nginx:alpine
+FROM nginx:1.27.2-alpine
+
 # 必要なファイルをコピー
 COPY --from=0 /app/build /usr/share/nginx/html
 COPY keys /keys

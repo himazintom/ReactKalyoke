@@ -11,6 +11,8 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import LanguageIcon from '@mui/icons-material/Language';
 
+import { fetchViedoDatasByStr } from './FormPost';
+import { SearchResultList } from './SearchResults.tsx';
 
 import './Header.css';
 
@@ -19,6 +21,8 @@ const headerItems = [
   { name: "歌詞コピー", path: "/lyrics-copy" },
   { name: "プレイリスト", path: "/playlist" },
 ];
+
+const hostUrl = process.env.REACT_APP_HOST_URL;
 
 const LanguageToggle = ({ currentLanguage, onToggle }) => {
   return (
@@ -47,6 +51,8 @@ const LanguageToggle = ({ currentLanguage, onToggle }) => {
 
 const Search = styled('div')(({ theme }) => ({
   position: 'relative',
+  display: 'flex',
+  flexDirection: 'row',
   borderRadius: theme.shape.borderRadius,
   backgroundColor: alpha(theme.palette.common.white, 0.15),
   '&:hover': {
@@ -55,6 +61,7 @@ const Search = styled('div')(({ theme }) => ({
   marginRight: theme.spacing(2),
   marginLeft: 0,
   width: '100%',
+  height: '50px',
   [theme.breakpoints.up('sm')]: {
     marginLeft: theme.spacing(3),
     width: 'auto',
@@ -62,7 +69,7 @@ const Search = styled('div')(({ theme }) => ({
 }));
 
 const SearchIconWrapper = styled('div')(({ theme }) => ({
-  padding: theme.spacing(0, 2),
+  padding: theme.spacing(0, 1),
   height: '100%',
   position: 'absolute',
   pointerEvents: 'none',
@@ -75,7 +82,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   color: 'inherit',
   '& .MuiInputBase-input': {
     padding: theme.spacing(1, 1, 1, 0),
-    paddingLeft: `calc(1em + ${theme.spacing(4)})`,
+    paddingLeft: '1em', //`calc(1em + ${theme.spacing(4)})`,
     transition: theme.transitions.create('width'),
     width: '100%',
     [theme.breakpoints.up('md')]: {
@@ -84,9 +91,29 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-function Header() {
+const Header = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState('JA');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  
+  const handleSearch = async () => {
+    if (searchQuery.trim() !== '') {
+      console.log('Searching for:', searchQuery);
+      
+      try {
+        // 非同期処理を待機して結果を取得
+        const searchResult = await fetchViedoDatasByStr(searchQuery);
+        console.log('Result:', searchResult);
+  
+        // 結果をステートにセット
+        setSearchResults(searchResult);
+        
+      } catch (error) {
+        console.error("検索中にエラーが発生しました:", error);
+      }
+    }
+  };
 
   const theme = useTheme();
   const isMdUp = useMediaQuery(theme.breakpoints.up('md'));
@@ -133,8 +160,8 @@ function Header() {
         <Toolbar sx={{ height: '64px' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
             <Link to="/">
-            <img 
-              src={logo} 
+            <img
+              src={logo}
               className="header-logo" 
               alt="logo" 
               style={{ marginRight: '16px', height: '60px', position: 'relative', top: '15px' }} 
@@ -157,15 +184,25 @@ function Header() {
               </Box>
             )}
           </Box>
-          <Search>{/*常に検索バーと言語変更ボタンは表示する*/}
-            <SearchIconWrapper>
-              <SearchIcon />
-            </SearchIconWrapper>
+          <Search>
             <StyledInputBase
               placeholder="Search…"
               inputProps={{ 'aria-label': 'search' }}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearch(); // Enterキーが押されたときにhandleSearchを呼び出す
+                }
+              }}
             />
+            <Button onClick={handleSearch} sx={{ ml: 1, display: 'flex', alignItems: 'center' }}>
+              <SearchIconWrapper>
+                <SearchIcon />
+              </SearchIconWrapper>
+            </Button>
           </Search>
+          
           <LanguageToggle currentLanguage={currentLanguage} onToggle={handleLanguageToggle} />
           {isMdUp ? (//画面が大きかったら
             <>
@@ -204,6 +241,7 @@ function Header() {
       >
         {drawerContent}
       </Drawer>
+      <SearchResultList searchResults={searchResults} hostUrl={hostUrl} />
     </Box>
   );
 }

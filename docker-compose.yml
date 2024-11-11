@@ -7,7 +7,7 @@ services:
       dockerfile: Dockerfile
     container_name: react-kalyoke-db
     environment:
-      EMYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
@@ -54,9 +54,17 @@ services:
     build:
       context: ./react
       dockerfile: Dockerfile
+      args: #ビルド時に必要な変数を受け渡す
+        REACT_APP_HOST_URL: ${REACT_APP_HOST_URL}
+        REACT_APP_API_URL: ${REACT_APP_API_URL}
+        REACT_APP_GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+        REACT_APP_SEARCH_ENGINE_ID: ${SEARCH_ENGINE_ID}
     container_name: react-kalyoke-web
     environment:
       REACT_APP_HOST_URL: ${REACT_APP_HOST_URL}
+      REACT_APP_API_URL: ${REACT_APP_API_URL}
+      REACT_APP_GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      REACT_APP_SEARCH_ENGINE_ID: ${SEARCH_ENGINE_ID}
     ports:
       - '80:80'
       - '443:443'

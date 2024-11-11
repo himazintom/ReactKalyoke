@@ -1,7 +1,9 @@
 import axios from 'axios';
 
-const apiUrl = process.env.REACT_APP_API_URL;//url
-console.log("apiUrl ",apiUrl );
+const apiUrl = "";// = process.env.REACT_APP_API_URL;//url
+const googleAPIKey = process.env.REACT_GOOGLE_API_KEY;//url
+const searchEngineID = process.env.REACT_SEARCH_ENGINE_ID;//url
+
 
 export const checkVideoExist= async (videoid) => {
   try {
@@ -75,6 +77,7 @@ export const updateLyricInDB = async (videoid, lyric) => {
 };
 
 export const fetchEveryoneHistory = async () => {
+
   try {
     const response = await axios.post(`${apiUrl}/api/fetch_everyone_history`, {}, {
       headers: {
@@ -155,8 +158,8 @@ export const getLyricByWeb = async (title, language) =>{//titleとlanguageをも
   const fetchLyricSites = async (title, language) => {
     console.log("タイトルは...", title);
     const url = "https://www.googleapis.com/customsearch/v1";
-    const apiKey = "AIzaSyD-1GN7qRDiXHkSM8kk70QHY40B4E0EAMc";  // ここにあなたのGoogle APIキーを入れてください
-    const cx = "21c1acf61c2b14c7d"; // ここにあなたの検索エンジンIDを入れてください
+    const apiKey = googleAPIKey;  // ここにあなたのGoogle APIキーを入れてください
+    const cx = searchEngineID; // ここにあなたの検索エンジンIDを入れてください
     const languages = {'ja': '歌詞', 'en': 'Lyric'};
     const query = `${title} ${languages[language]}`;
   
