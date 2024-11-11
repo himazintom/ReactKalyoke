@@ -1,5 +1,5 @@
 import { Box, Paper } from '@mui/material';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, color } from 'framer-motion';
 import { styled } from '@mui/material/styles';
 
 const ScrollableResults = styled(Box)(({ theme }) => ({
@@ -31,7 +31,7 @@ const SearchResultItem = styled(motion(Paper))(({ theme }) => ({
   transition: 'background-color 0.3s ease', // スムーズな背景変化
   backgroundColor: theme.palette.background.default, // デフォルトの背景色
   '&:hover': {
-    backgroundColor: theme.palette.action.hover, // ホバー時の背景色（少し暗い色）
+    backgroundColor: '#f0f0f0' // 白とはいいろに変更
   },
 }));
 

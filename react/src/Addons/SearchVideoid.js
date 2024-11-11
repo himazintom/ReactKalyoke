@@ -15,17 +15,7 @@ function SearchVideoid() {
       axios.get(`${apiUrl}/api/search_videoid/${videoid}`)
         .then(response => {
           const videoDatas = response.data;
-  
-          // // 取得したデータに基づいて処理を行う
-          // console.log("new_page", videoDatas);  // デバッグ用
-  
-          // // 10秒後にリダイレクト
-          // const timer = setTimeout(() => {
-          //   navigate('/', { state: { videoDatas: videoDatas } });
-          // }, 10000); // 10000ミリ秒 = 10秒
-  
-          // // クリーンアップ関数
-          // return () => clearTimeout(timer);
+          navigate('/', { state: { videoDatas: videoDatas } });
         })
         .catch(error => {
           console.error("There was an error fetching the data!", error);
