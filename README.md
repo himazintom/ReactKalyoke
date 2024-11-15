@@ -153,3 +153,33 @@ docker run -d --rm --name react-kalyoke-db -v /db/db_data:/var/lib/mysql -p 3306
 docker exec -it react-kalyoke-db bash
 mariadb -u root -p
 ```
+
+ALTER TABLE videos 
+  CHANGE COLUMN site site_name VARCHAR(255) NOT NULL,
+  CHANGE COLUMN videoid video_id VARCHAR(255) NOT NULL,
+  CHANGE COLUMN register_date created_at DATETIME NOT NULL,
+  CHANGE COLUMN update_date updated_at DATETIME NOT NULL;
+
+-- 2. インデックスの追加
+ALTER TABLE videos
+  ADD UNIQUE INDEX idx_video_id (video_id);
+
+-- users テーブルの変更
+-- 1. カラム名の変更とデータ型の変更
+ALTER TABLE users
+  CHANGE COLUMN password password_hash VARCHAR(255) NOT NULL,
+  CHANGE COLUMN status account_status ENUM('temporary', 'free', 'singer', 'premium', 'himazi') NOT NULL,
+  CHANGE COLUMN singed_count sing_count INT NOT NULL DEFAULT 0,
+  CHANGE COLUMN token auth_token CHAR(64),
+  CHANGE COLUMN singed_history singing_history JSON;
+
+-- 2. ENUMの値を更新（既存のデータを新しい値にマイグレート）
+UPDATE users SET account_status = 'temporary' WHERE account_status = 'temp';
+
+-- 3. updated_at カラムの追加と自動更新の設定
+ALTER TABLE users
+  ADD COLUMN updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;
+
+-- 4. インデックスの追加
+ALTER TABLE users
+  ADD INDEX idx_account_status (account_status);
