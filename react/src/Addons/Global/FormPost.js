@@ -4,12 +4,11 @@ const apiUrl = "";// = process.env.REACT_APP_API_URL;//url
 const googleAPIKey = process.env.REACT_GOOGLE_API_KEY;//url
 const searchEngineID = process.env.REACT_SEARCH_ENGINE_ID;//url
 
-
-export const checkVideoExist= async (videoid) => {
+export const checkVideoExist= async (videoId) => {
   try {
     // JSON データを作成して送信
     const response = await axios.post(`${apiUrl}/api/check_video_exist`, {
-      videoid: videoid,
+      videoId: videoId,
     }, {
       headers: {
         'Content-Type': 'application/json'
@@ -22,12 +21,12 @@ export const checkVideoExist= async (videoid) => {
   }
 };
 
-export const Demucs = async (url, videoid, lyric) => {
+export const separateMusic = async (url, videoId, lyric) => {
   try {
     // JSON データを作成して送信
-    const response = await axios.post(`${apiUrl}/api/demucs`, {
+    const response = await axios.post(`${apiUrl}/api/separate_music`, {
       url: url,
-      videoid: videoid,
+      videoId: videoId,
       lyric: lyric
     }, {
       headers: {
@@ -41,11 +40,12 @@ export const Demucs = async (url, videoid, lyric) => {
   }
 };
 
-export const fetchLyricFromDB = async (videoid) => {
+export const fetchLyricFromDB = async (videoId) => {
+  
   try {
     // JSON データを作成して送信
     const response = await axios.post(`${apiUrl}/api/fetch_lyric`, {
-      videoid: videoid,
+      videoId: videoId,
     }, {
       headers: {
         'Content-Type': 'application/json'
@@ -59,10 +59,10 @@ export const fetchLyricFromDB = async (videoid) => {
   }
 };
 
-export const updateLyricInDB = async (videoid, lyric) => {
+export const updateLyricInDB = async (videoId, lyric) => {
   try {
     const response = await axios.post(`${apiUrl}/api/update_lyric`, {
-      videoid: videoid,
+      videoId: videoId,
       lyric: lyric,
     }, {
       headers: {
@@ -90,9 +90,9 @@ export const fetchEveryoneHistory = async () => {
     // APIから返された配列を使って新しいデータ配列を作成
     let data = response.data.map(item => ({
       title: item.title,
-      videoid: item.videoid
+      videoId: item.video_id
     }));
-    return data;
+    return response.data;
   } catch (error) {
     console.error('Error fetching data:', error);
     return [];
@@ -109,17 +109,22 @@ export const fetchRandomMusics = async (requestCount = 1) => {
     if (!response.data || !Array.isArray(response.data)) {
       throw new Error('No data or incorrect format received from the server');
     }
-    return response.data;
+    // APIから返された配列を使って新しいデータ配列を作成
+    let data = response.data.map(item => ({
+      title: item.title,
+      videoId: item.video_id
+    }));
+    return data;
   } catch (error) {
     console.error('Error fetching data:', error);
     return [];
   }
 };
 
-export const fetchTitleByVideoid = async (videoid) => {
+export const fetchTitleByVideoId = async (videoId) => {
   try {
     const response = await axios.post(`${apiUrl}/api/fetch_title`, {
-      'videoid': videoid,
+      'videoId': videoId,
     },{
       headers: {
         'Content-Type': 'application/json'
@@ -209,9 +214,9 @@ export const getLyricByWeb = async (title, language) =>{//titleとlanguageをも
   return 'Null'
 }
 
-export const fetchPlaylistDatas = async (url) => {
+export const fetchPlaylistData = async (url) => {
   try {
-    const response = await axios.post(`${apiUrl}/api/fetch_playlist_datas`, {
+    const response = await axios.post(`${apiUrl}/api/fetch_playlist_data`, {
       'url': url,
     },{
       headers: {
@@ -228,9 +233,9 @@ export const fetchPlaylistDatas = async (url) => {
   }
 };
 
-export const fetchViedoDatasByStr = async (searchedWord) => {//文字列をもとにビデオデータの検索を行う
+export const fetchVideoDataByStr = async (searchedWord) => {//文字列をもとにビデオデータの検索を行う
   try {
-    const response = await axios.post(`${apiUrl}/api/fetch_video_datas_by_str`, {
+    const response = await axios.post(`${apiUrl}/api/fetch_video_data_by_str`, {
       'searchWord': searchedWord,
     },{
       headers: {

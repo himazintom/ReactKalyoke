@@ -5,17 +5,17 @@ import axios from 'axios';
 const apiUrl = process.env.REACT_APP_API_URL;
 const hostUrl = process.env.REACT_APP_HOST_URL;
 
-function SearchVideoid() {
-  let { videoid } = useParams();
+export const SearchVideoId = () => {
+  let { videoId } = useParams();
   let navigate = useNavigate();
 
   useEffect(() => {
     try {
       // API呼び出し
-      axios.get(`${apiUrl}/api/search_videoid/${videoid}`)
+      axios.get(`${apiUrl}/api/search_video_id/${videoId}`)
         .then(response => {
-          const videoDatas = response.data;
-          navigate('/', { state: { videoDatas: videoDatas } });
+          const videoData = response.data;
+          navigate('/', { state: { videoData: videoData } });
         })
         .catch(error => {
           console.error("There was an error fetching the data!", error);
@@ -24,7 +24,7 @@ function SearchVideoid() {
       console.error('Error fetching data:', error);
       return null;
     }
-  }, [videoid, navigate]);
+  }, [videoId, navigate]);
 
   return (
     <div>
@@ -32,5 +32,3 @@ function SearchVideoid() {
     </div>
   );
 }
-
-export default SearchVideoid;

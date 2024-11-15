@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import * as FormPost from '../PlayerPage/FormPost';
+import * as FormPost from '../Global/FormPost';
 import { Box } from '@mui/material';
 
-function LyricsCopy() {
+export const LyricsCopy = () => {
   const [url, setUrl] = useState('');
   const [annotation, setAnnotation] = useState('');
 
@@ -59,5 +59,3 @@ function LyricsCopy() {
     </Box>
   );
 }
-
-export default LyricsCopy;

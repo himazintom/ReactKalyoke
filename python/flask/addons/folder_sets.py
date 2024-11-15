@@ -1,13 +1,15 @@
 import os
 
-def SCF(folder_path):#search_or_create_folder
+
+def SCF(folder_path):  # search_or_create_folder
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
-        #print(f"フォルダ '{folder_path}' を作成しました。")
+        # print(f"フォルダ '{folder_path}' を作成しました。")
         return False
     else:
         print(f"フォルダ '{folder_path}' は既に存在します。")
         return True
+
 
 # ファイル名を変更する関数
 def rename_file(old_name, new_name):

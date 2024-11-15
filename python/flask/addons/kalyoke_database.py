@@ -39,7 +39,7 @@ def get_id_from_database(table, column_name, value):
     if table == "videos":
         if column_name not in [
             "site",
-            "videoid",
+            "video_id",
             "title",
             "lyric",
             "folder_path",
@@ -88,7 +88,7 @@ def get_data_from_database(table, id, column_name):
         raise ValueError("無効なテーブル名です。")
     if table == "videos" and column_name not in [
         "site",
-        "videoid",
+        "video_id",
         "title",
         "lyric",
         "folder_path",
@@ -127,52 +127,52 @@ def get_data_from_database(table, id, column_name):
         close_database_connection(cursor, conn)
 
 
-def add_to_videos_database(datas):  # videosデータベースに曲情報を追加
+def add_to_videos_database(data):  # videosデータベースに曲情報を追加
     conn = connect_to_database()
     cursor = conn.cursor()
     add_video = (
         "INSERT INTO videos "
-        "(site, videoid, title, lyric, folder_path, register_date, update_date) "
-        "VALUES (%(site)s, %(videoid)s, %(title)s, %(lyric)s, %(folder_path)s, "
+        "(site, video_id, title, lyric, folder_path, register_date, update_date) "
+        "VALUES (%(site)s, %(video_id)s, %(title)s, %(lyric)s, %(folder_path)s, "
         "%(register_date)s, %(update_date)s)"
     )
-    cursor.execute(add_video, datas)
+    cursor.execute(add_video, data)
     conn.commit()
     close_database_connection(cursor, conn)
 
 
-def update_videos_database(videoid, lyric):  # videosデータベースの歌われた情報を更新
+def update_videos_database(video_id, lyric):  # videosデータベースの歌われた情報を更新
     conn = connect_to_database()
     cursor = conn.cursor()
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     if lyric is not None:
         update_video = (
-            "UPDATE videos SET update_date = %s, lyric = %s WHERE videoid = %s"
+            "UPDATE videos SET update_date = %s, lyric = %s WHERE video_id = %s"
         )
-        cursor.execute(update_video, (current_time, lyric, videoid))
+        cursor.execute(update_video, (current_time, lyric, video_id))
     else:
-        update_video = "UPDATE videos SET update_date = %s WHERE videoid = %s"
-        cursor.execute(update_video, (current_time, videoid))
+        update_video = "UPDATE videos SET update_date = %s WHERE video_id = %s"
+        cursor.execute(update_video, (current_time, video_id))
     conn.commit()
     close_database_connection(cursor, conn)
 
 
-def get_latest_videoids():  # 最近うたわれた順で5曲を取得
+def get_latest_video_ids():  # 最近うたわれた順で5曲を取得
     conn = connect_to_database()
     cursor = conn.cursor(dictionary=True)
-    query = "SELECT videoid, title FROM videos ORDER BY update_date DESC LIMIT 5"
+    query = "SELECT video_id, title FROM videos ORDER BY update_date DESC LIMIT 5"
     cursor.execute(query)
     rows = cursor.fetchall()
     close_database_connection(cursor, conn)
     return rows
 
 
-def get_videoid_from_title_str(search_word):
+def get_video_id_from_title_str(search_word):
     try:
         conn = connect_to_database()
         with conn.cursor(dictionary=True) as cursor:
             # 検索キーワードの前後に%を追加して部分一致検索
-            query = "SELECT videoid, title FROM videos WHERE title LIKE %s"
+            query = "SELECT video_id, title FROM videos WHERE title LIKE %s"
             cursor.execute(query, ("%" + search_word + "%",))
             rows = cursor.fetchall()
         conn.close()  # リソース管理としては、with構文でconnも自動管理できるとよいが、cursorのみ対応
@@ -304,31 +304,31 @@ def change_user_name(user_id, new_username):  # ユーザーの名前を変更�
     close_database_connection(cursor, conn)
 
 
-def save_singed_history(user_id, videoid, pitch):  # ユーザーの歌った履歴を保存する
-    id = get_id_from_database("videos", "videoid", videoid)
+def save_singed_history(user_id, video_id, pitch):  # ユーザーの歌った履歴を保存する
+    id = get_id_from_database("videos", "video_id", video_id)
     if id:
         title = get_data_from_database("videos", id, "title")
         status = get_data_from_database("users", user_id, "status")
-        add_datas = {"videoid": videoid, "pitch": pitch, "title": title}
-        datas = get_data_from_database("users", user_id, "singed_history")
-        if datas:
-            datas = json.loads(datas)
-            # 同じvideoidの曲があるかチェックし、あれば削除
-            datas = [data for data in datas if data["videoid"] != videoid]
+        add_data = {"video_id": video_id, "pitch": pitch, "title": title}
+        data = get_data_from_database("users", user_id, "singed_history")
+        if data:
+            data = json.loads(data)
+            # 同じvideo_idの曲があるかチェックし、あれば削除
+            data = [data for data in data if data["video_id"] != video_id]
             # 新しいデータを先頭に追加
-            datas.insert(0, add_datas)
+            data.insert(0, add_data)
             if status == "free":
-                datas = datas[:10]
+                data = data[:10]
             if status == "singer":
-                datas = datas[:100]
+                data = data[:100]
             if status == "singer":
-                datas = datas[:200]
+                data = data[:200]
         else:
-            datas = [add_datas]
+            data = [add_data]
         conn = connect_to_database()
         cursor = conn.cursor()
         query = "UPDATE users SET singed_history = %s WHERE id = %s"
-        cursor.execute(query, (json.dumps(datas), user_id))
+        cursor.execute(query, (json.dumps(data), user_id))
         conn.commit()
         close_database_connection(cursor, conn)
 
@@ -337,7 +337,7 @@ def get_random_song(requestCount):
     try:
         conn = connect_to_database()
         cursor = conn.cursor(dictionary=True)
-        query = "SELECT videoid, lyric, title FROM videos ORDER BY RAND() LIMIT %s"
+        query = "SELECT video_id, lyric, title FROM videos ORDER BY RAND() LIMIT %s"
         cursor.execute(
             query, (int(requestCount),)
         )  # requestCountを整数に変換してからクエリに渡す

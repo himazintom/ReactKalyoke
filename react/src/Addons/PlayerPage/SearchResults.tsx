@@ -60,7 +60,7 @@ export const SearchResultList = ({ searchResults = [], hostUrl = '' }) => {
               elevation={1}
             >
               <a 
-                href={`${hostUrl}/search_id/${result.videoid}`}
+                href={`${hostUrl}/search_id/${result.videoId}`}
                 style={{ 
                   textDecoration: 'none', 
                   color: 'inherit',

@@ -91,6 +91,36 @@ CREATE TABLE users (
     singed_history JSON,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE videos (
+    id INT NOT NULL AUTO_INCREMENT,
+    site_name VARCHAR(255) NOT NULL,      -- より具体的な名前に
+    video_id VARCHAR(255) NOT NULL,       -- スネークケースに統一
+    title VARCHAR(255) NOT NULL,
+    lyric TEXT NULL,
+    folder_path VARCHAR(400) NOT NULL,
+    created_at DATETIME NOT NULL,         -- 一般的な命名規則に準拠
+    updated_at DATETIME NOT NULL,         -- 一般的な命名規則に準拠
+    PRIMARY KEY (id),
+    UNIQUE INDEX idx_video_id (video_id)         -- 検索の最適化のためのインデックス追加
+);
+
+CREATE TABLE users (
+    id INT NOT NULL AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,   -- より具体的な名前に
+    account_status ENUM('temporary', 'free', 'singer', 'premium', 'himazi') NOT NULL, -- より明確な名前と値
+    sing_count INT NOT NULL DEFAULT 0,     -- より明確な名前
+    auth_token CHAR(64),                  -- より具体的な名前に
+    singing_history JSON,                 -- より明確な名前
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  -- 更新日時の自動記録
+    PRIMARY KEY (id),
+    UNIQUE INDEX idx_username (username),
+    UNIQUE INDEX idx_email (email),
+    INDEX idx_account_status (account_status)
+);
 ```
 
 ### 5. 各種コンテナ操作用コマンド

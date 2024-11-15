@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { AppBar, Toolbar, IconButton, Drawer, List, ListItem, ListItemText, Box, Button } from '@mui/material';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import MenuIcon from '@mui/icons-material/Menu';  // 追加: MenuIconをインポート
-import logo from './Small_Kalyoke_Logo_micless.png';
+import logo from './KalyokeLogo.png';
 import { styled, alpha } from '@mui/material/styles';
 import InputBase from '@mui/material/InputBase';
 import SearchIcon from '@mui/icons-material/Search';
@@ -11,14 +11,14 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import LanguageIcon from '@mui/icons-material/Language';
 
-import { fetchViedoDatasByStr } from './FormPost';
-import { SearchResultList } from './SearchResults.tsx';
+import { fetchVideoDataByStr } from '../FormPost.js';
+import { SearchResultList } from '../../PlayerPage/SearchResults.tsx';
 
 import './Header.css';
 
 const headerItems = [
   { name: "使い方", path: "/usage" },
-  { name: "歌詞コピー", path: "/lyrics-copy" },
+  { name: "歌詞コピー", path: "/lyrics_copy" },
   { name: "プレイリスト", path: "/playlist" },
 ];
 
@@ -91,7 +91,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const Header = () => {
+export const Header = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [currentLanguage, setCurrentLanguage] = useState('JA');
   const [searchQuery, setSearchQuery] = useState('');
@@ -103,7 +103,7 @@ const Header = () => {
       
       try {
         // 非同期処理を待機して結果を取得
-        const searchResult = await fetchViedoDatasByStr(searchQuery);
+        const searchResult = await fetchVideoDataByStr(searchQuery);
         console.log('Result:', searchResult);
   
         // 結果をステートにセット
@@ -245,5 +245,3 @@ const Header = () => {
     </Box>
   );
 }
-
-export default Header;

@@ -1,12 +1,12 @@
 import React from 'react';
 
-function Usage() {
+export const Usage = () => {
   return (
-    <div>
-      <h1>使い方</h1>
-      <p>このページでは、アプリケーションの使い方について説明します。</p>
-    </div>
+    <Box>
+      <div>
+        <h1>使い方</h1>
+        <p>このページでは、アプリケーションの使い方について説明します。</p>
+      </div>
+    </Box>
   );
 }
-
-export default Usage;

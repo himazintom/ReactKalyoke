@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, Typography, TextField, CircularProgress } from '@mui/material';
-import * as FormPost from '../PlayerPage/FormPost';
+import * as FormPost from '../Global/FormPost';
 
-function Playlist() {
+export const Playlist = () => {
   const [youtubePlaylistUrlErrorMessage, setYoutubePlaylistUrlErrorMessage] = useState('');
   const [youtubePlaylistUrl, setYoutubePlaylistUrl] = useState('');
   const [preparePlaylistKaraokeStatus, setPreparePlaylistKaraokeStatus] = useState(0);
-  const [playlistDatas, setPlaylistDatas] = useState([]);
+  const [playlistData, setPlaylistData] = useState([]);
   const [isPlaylistLoading, setIsPlaylistLoading] = useState(false);
   const [isMovieProcess, setIdMovieProcess] = useState(-1);
   const itemRefs = useRef([]); // Ref for tracking each item
@@ -39,12 +39,12 @@ function Playlist() {
           setIdMovieProcess(-1);
           setIsPlaylistLoading(true);
           try {
-            const datas = await FormPost.fetchPlaylistDatas(youtubePlaylistUrl);
-            if (datas.length === 0) {
+            const data = await FormPost.fetchPlaylistData(youtubePlaylistUrl);
+            if (data.length === 0) {
               setYoutubePlaylistUrlErrorMessage('処理の途中でエラーが発生しました');
               return;
             }
-            setPlaylistDatas(datas);
+            setPlaylistData(data);
             setIdMovieProcess(0);
           } catch (error) {
             setYoutubePlaylistUrlErrorMessage('データの取得に失敗しました');
@@ -54,19 +54,19 @@ function Playlist() {
           }
           break;
         case 3:
-          const datas = playlistDatas;
+          const data = playlistData;
           let errorMessage = [];
 
-          for (let i = 0; i < datas.length; i++) {
-            const data = datas[i];
-            const existCheck = await FormPost.checkVideoExist(data['videoid']);
+          for (let i = 0; i < data.length; i++) {
+            const data = data[i];
+            const existCheck = await FormPost.checkVideoExist(data['videoId']);
             if (!existCheck.exists) {//曲がデータベースになかったら
-              const url = 'https://www.youtube.com/watch?v=' + data['videoid'];
+              const url = 'https://www.youtube.com/watch?v=' + data['videoId'];
               const lyric = await FormPost.getLyricByWeb(data['title'], 'ja');
               const updateLyric = lyric === 'Null' ? '' : lyric;
-              const videoCheck = await FormPost.Demucs(url, data['videoid'], updateLyric);
+              const videoCheck = await FormPost.separateMusic(url, data['videoId'], updateLyric);
               if (!videoCheck) {
-                errorMessage.push(`${data['title']} (${data['videoid']}) の用意中にエラーが起こりました`);
+                errorMessage.push(`${data['title']} (${data['videoId']}) の用意中にエラーが起こりました`);
               }
             }
             setIdMovieProcess(i);
@@ -166,7 +166,7 @@ function Playlist() {
           </Box>
         )}
 
-        {!isPlaylistLoading && playlistDatas.length > 0 && (
+        {!isPlaylistLoading && playlistData.length > 0 && (
            <Box sx={{ marginTop: 4 }}>
       <Typography variant="h6">プレイリストの動画一覧:</Typography>
       
@@ -180,7 +180,7 @@ function Playlist() {
           }}
         >
           <ul style={{ listStyleType: 'none', padding: 0 }}>
-            {playlistDatas.map((video, index) => (
+            {playlistData.map((video, index) => (
               <li
                 key={index}
                 ref={(el) => (itemRefs.current[index] = el)} // Add ref to each item
@@ -224,5 +224,3 @@ function Playlist() {
     </Box>
   );
 }
-
-export default Playlist;

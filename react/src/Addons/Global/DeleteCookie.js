@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
-const DeleteCookie = () => {
+export const DeleteCookie = () => {
   const navigate = useNavigate();
 
   const deleteAllCookies = () => {
@@ -29,5 +29,3 @@ const DeleteCookie = () => {
     </div>
   );
 };
-
-export default DeleteCookie;

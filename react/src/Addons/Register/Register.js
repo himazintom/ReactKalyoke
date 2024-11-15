@@ -1,6 +1,6 @@
 import React from 'react';
 
-function Register() {
+export const Register = () => {
   return (
     <div>
       <h1>ログイン・新規登録</h1>
@@ -8,5 +8,3 @@ function Register() {
     </div>
   );
 }
-
-export default Register;

@@ -18,14 +18,14 @@ function UrlForm() {
   const [isChangeLyricForm, setIsChangeLyricForm]= useState(false);
 
   const location = useLocation();
-  const videoDatas = location.state?.videoDatas;
+  const videoData = location.state?.videoData;
 
-  let beforeVideoid=""
+  let beforeVideoId=""
 
   useEffect(() => {//searchidでページ推移されたときにformを記入済みにしておく
-    if(videoDatas){
-      setYoutubeUrl(`https://www.youtube.com/watch?v=${videoDatas.videoid}`);
-      setlyric(videoDatas['lyric'])
+    if(videoData){
+      setYoutubeUrl(`https://www.youtube.com/watch?v=${videoData.videoId}`);
+      setlyric(videoData['lyric'])
     }
   }, []);  // 空の依存配列にすることで、初回マウント時にのみ実行される
 
@@ -49,12 +49,12 @@ function UrlForm() {
     const url = event.target.value;
     setYoutubeUrl(url);
   
-    let videoid = extractVideoId(url);
-    if (videoid) {
-      if(videoid!=beforeVideoid){
-        beforeVideoid=videoid
+    let videoId = extractVideoId(url);
+    if (videoId) {
+      if(videoId!=beforeVideoId){
+        beforeVideoId=videoId
         try {
-          const lyric = await FormPost.fetchLyricFromDB(videoid);
+          const lyric = await FormPost.fetchLyricFromDB(videoId);
           console.log("lyric=", lyric);
           setlyric(lyric);
         } catch (error) {
@@ -139,8 +139,8 @@ function UrlForm() {
   };
 
   const handleSing = async () => {
-    let videoid = extractVideoId(youtubeUrl);
-    if (!videoid) {
+    let videoId = extractVideoId(youtubeUrl);
+    if (!videoId) {
       setYoutubeUrlErrorMessage("入力されたURLはYouTubeのURLの形式ではありません"); // エラーメッセージを設定
       return;
     } else {
@@ -153,19 +153,19 @@ function UrlForm() {
       }
     }
 
-    if (beforeVideoid === videoid) { // videoidが変わってないとき
+    if (beforeVideoId === videoId) { // videoIdが変わってないとき
       if (isChangeLyricForm) { // 歌詞に変更があった時
-        const result = await FormPost.updateLyricInDB(videoid, lyric);
+        const result = await FormPost.updateLyricInDB(videoId, lyric);
         if (result === "error") {
           setLyricFormUrlErrorMessage("歌詞の更新中にエラーが発生したようです");
         } else {
           setLyricFormUrlErrorMessage('歌詞が正常に更新されました');
         }
       }
-    } else { // 新しく入力されたvideoidのurlだったら
+    } else { // 新しく入力されたvideoIdのurlだったら
       try {
-        const datas = await FormPost.fetchDataFromApi(youtubeUrl, videoid, lyric); // 曲情報を取得
-        console.log("datas", datas);
+        const data = await FormPost.fetchDataFromApi(youtubeUrl, videoId, lyric); // 曲情報を取得
+        console.log("data", data);
       } catch (error) {
         console.error("API呼び出し中にエラーが発生しました:", error);
         setLyricFormUrlErrorMessage("データの取得中にエラーが発生しました");

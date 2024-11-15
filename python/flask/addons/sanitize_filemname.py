@@ -1,5 +1,6 @@
 import string
 
+
 def sanitize_filename(filename):
     # ファイル名に使えない文字のリスト
     invalid_chars = r'／＼＊\/:*?"<>|'
@@ -8,12 +9,16 @@ def sanitize_filename(filename):
     valid_chars = string.ascii_letters + string.digits + " "
 
     # ファイル名に使えない文字を除外
-    sanitized_filename = "".join(c for c in filename if c in valid_chars or c not in invalid_chars)
+    sanitized_filename = "".join(
+        c for c in filename if c in valid_chars or c not in invalid_chars
+    )
     # スペースをアンダースコアに置き換え
     sanitized_filename = sanitized_filename.replace(" ", "_")
 
     return sanitized_filename
 
+
+# testcode
 # ファイル名に使えない文字が含まれる文字列をテスト
 # filename_with_invalid_chars = "Hello? \\ ??$world:*"
 # sanitized_filename = sanitize_filename(filename_with_invalid_chars)

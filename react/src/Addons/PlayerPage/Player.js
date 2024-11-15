@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Box, Slider, Button, Typography, Checkbox, TextField, FormControlLabel, Link } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import YouTube from 'react-youtube';
-import Waveform from '../Waveform';
+import Waveform from './Waveform';
 import Cookies from 'js-cookie';
 
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -14,9 +14,9 @@ import ShuffleIcon from '@mui/icons-material/Shuffle';
 import PianoIcon from '@mui/icons-material/Piano'; // 仮の例
 import MicIcon from '@mui/icons-material/Mic';
 
-import * as FormPost from './FormPost';
+import * as FormPost from '../Global/FormPost';
 
-const Player = () => {
+export const Player = () => {
   const hostUrl = process.env.REACT_APP_HOST_URL;
 
   const [yourHistory, setYourHistory] = useState([]);
@@ -24,16 +24,16 @@ const Player = () => {
     const yourHistory = JSON.parse(Cookies.get('yourHistory') || '[]');
     if (yourHistory.length > 0) {
       setYourHistory(yourHistory);
-      if(!videoDatas){//もしsearch_idからページに入らなかったら、以前最後に歌った曲を記入しておく
-        const videoid = yourHistory[0]['videoid']
-        const url='https://www.youtube.com/watch?v=' + videoid;
+      if(!videoData){//もしsearch_idからページに入らなかったら、以前最後に歌った曲を記入しておく
+        const videoId = yourHistory[0]['videoId']
+        const url='https://www.youtube.com/watch?v=' + videoId;
         setYoutubeUrl(url);
-        setLyricByCookie(videoid);
+        setLyricByCookie(videoId);
       }
     }
   }, []);
-  const setLyricByCookie = async(videoid) => {
-    const lyric = await FormPost.fetchLyricFromDB(videoid);
+  const setLyricByCookie = async(videoId) => {
+    const lyric = await FormPost.fetchLyricFromDB(videoId);
     setLyric(lyric);
   }
 
@@ -41,7 +41,7 @@ const Player = () => {
   const [recommendation, setRecommendations] = useState([]);
 
   const [youtubeUrl, setYoutubeUrl] = useState('');
-  const [beforeYoutubeUrlFormVideoid, setBeforeYoutubeUrlFormVideoid] = useState('');
+  const [beforeYoutubeUrlFormVideoId, setBeforeYoutubeUrlFormVideoId] = useState('');
 
   const [lyric, setLyric] = useState('');
   const [beforeAutoLyric, setBeforeAutoLyric] = useState(null);
@@ -54,16 +54,16 @@ const Player = () => {
   const [prepareKaraokeStatus, setPrepareKaraokeStatus] = useState(0);
 
   const location = useLocation();
-  const videoDatas = location.state?.videoDatas;
+  const videoData = location.state?.videoData;
 
-  const [beforeVideoid, setBeforeVideoid] = useState('');
+  const [beforeVideoId, setBeforeVideoId] = useState('');
 
-  useEffect(() => {//searchidでページ推移されたときにformを記入済みにしておく
+  useEffect(() => {//searchIdでページ推移されたときにformを記入済みにしておく
     const setUrlAndLyricInForm = async () => {
-      if(videoDatas){
-        const videoid = videoDatas.videoid;
-        setYoutubeUrl(`https://www.youtube.com/watch?v=${videoid}`);
-        setLyric(await FormPost.fetchLyricFromDB(videoid));//videoidをもとに最新の歌詞を入力
+      if(videoData){
+        const videoId = videoData.videoId;
+        setYoutubeUrl(`https://www.youtube.com/watch?v=${videoId}`);
+        setLyric(await FormPost.fetchLyricFromDB(videoId));//videoIdをもとに最新の歌詞を入力
       }
     }
     setUrlAndLyricInForm();
@@ -75,12 +75,12 @@ const Player = () => {
   }, []);
 
   const fetchRecommendData = useCallback(async () => {
-    const reccomends = await FormPost.fetchRandomMusics(5);
-    let reccomendDatas = reccomends.map(item => ({
+    const recommends = await FormPost.fetchRandomMusics(5);
+    let recommendsData = recommends.map(item => ({
       title: item.title,
-      videoid: item.videoid
+      videoId: item.videoId
     }));
-    setRecommendations(reccomendDatas);
+    setRecommendations(recommendsData);
   },[]);
 
   useEffect(() => {
@@ -105,13 +105,13 @@ const Player = () => {
     const url = event.target.value;
     setYoutubeUrl(url);
   
-    let videoid = extractVideoId(url);
-    if (videoid) {
-      if(videoid!=beforeYoutubeUrlFormVideoid){//今までと違うvideoidが入力されたら
-        setBeforeYoutubeUrlFormVideoid(videoid);
+    let videoId = extractVideoId(url);
+    if (videoId) {
+      if(videoId!=beforeYoutubeUrlFormVideoId){//今までと違うvideoIdが入力されたら
+        setBeforeYoutubeUrlFormVideoId(videoId);
         setLyric('');
         try {
-          const lyric = await FormPost.fetchLyricFromDB(videoid);
+          const lyric = await FormPost.fetchLyricFromDB(videoId);
           if(lyric!='Null'){
             setLyric(lyric);
           }
@@ -230,9 +230,9 @@ const Player = () => {
     setIsOverseas(event.target.checked);
   };
 
-  const handleSearchlyric = async() => {//現在のvideoidの曲の歌詞をwebから検索して返す
-    const videoid = extractVideoId(youtubeUrl);//youtubeのurlの形式か確認
-    if (!videoid) {
+  const handleSearchLyric = async() => {//現在のvideoIdの曲の歌詞をwebから検索して返す
+    const videoId = extractVideoId(youtubeUrl);//youtubeのurlの形式か確認
+    if (!videoId) {
       setYoutubeUrlErrorMessage('入力されたURLはYouTubeのURLの形式ではありません'); // エラーメッセージを設定
       return; // ここで終了して戻る
     } else {
@@ -240,7 +240,7 @@ const Player = () => {
     }
     setIsAutoSearchLyric(true);
     const language = isOverseas ? 'en' : 'ja'
-    const title = await FormPost.fetchTitleByVideoid(videoid)
+    const title = await FormPost.fetchTitleByVideoId(videoId)
     if(title=='Null'){
       setLyricFormUrlErrorMessage('歌詞は見つかりませんでした: title missing'); // エラーメッセージを設定\
     }
@@ -262,13 +262,13 @@ const Player = () => {
     setBeforeAutoLyric(null);
   }
 
-  const setHistoryDatas = (title, videoid) => {//クッキーに追加で履歴を残す
+  const setHistoryData = (title, videoId) => {//クッキーに追加で履歴を残す
     const historyData = { 
       title: title,
-      videoid: videoid
+      videoId: videoId
     };
-    // 同じvideoidの履歴があれば削除
-    const updateYourHistory = yourHistory.filter(item => item.videoid !== videoid);
+    // 同じvideoIdの履歴があれば削除
+    const updateYourHistory = yourHistory.filter(item => item.videoId !== videoId);
     updateYourHistory.unshift(historyData);
     if (updateYourHistory.length > 5) {
       updateYourHistory.pop();
@@ -279,9 +279,9 @@ const Player = () => {
 
   useEffect(() => {
     const prepareKaraoke = async () => {
-      let videoid;
+      let videoId;
       if (prepareKaraokeStatus > 0) {
-        videoid = extractVideoId(youtubeUrl);
+        videoId = extractVideoId(youtubeUrl);
       }
       switch (prepareKaraokeStatus) {
         case 0: // 初期状態
@@ -292,7 +292,7 @@ const Player = () => {
 
           break;
         case 2: // フォームにミスがないか確認
-          if (!videoid) {
+          if (!videoId) {
             setYoutubeUrlErrorMessage('入力されたURLはYouTubeのURLの形式ではありません'); // エラーメッセージを設定
             return; // ここで終了して戻る
           } else {
@@ -304,8 +304,8 @@ const Player = () => {
             }
             setIsPlayerLyricReady(false);
             if(isChangeLyricForm){//歌詞欄に変化があったら歌詞を代入する
-              const timestampizedLyric = timestampize(lyric);
-              setPlayerLyricList(timestampizedLyric);
+              const timestampedLyric = timestampize(lyric);
+              setPlayerLyricList(timestampedLyric);
             }
             setIsTimestampLyric(true);
           }
@@ -314,31 +314,31 @@ const Player = () => {
   
         case 3:
           if (isTimestampLyric) { // タイムスタンプ付きの歌詞だった場合
-            if (beforeVideoid !== videoid) { // videoidが変わったとき
+            if (beforeVideoId !== videoId) { // videoIdが変わったとき
               setCurrentLyricIndex(2);//1行目の歌詞を真ん中に来るように
             }
-            setIsPlayerLyricReady(true);//これでtimestamp付きの歌詞の場合の準備は完了！
+            setIsPlayerLyricReady(true);//これでtimestamp付きの歌詞の場合の準備は完了��
           }else{
             setCurrentLyricIndex(-1);//文字が大きくなったり、透明になったりしないように
           }
           setPrepareKaraokeStatus(4);
           break;
   
-        case 4: // videoidをもとにPlayerや歌詞の準備をする
-          if (beforeVideoid === videoid) { // videoidが変わってないとき
-            if (isShufflePlaying) { // もしシャッフル再生中に同じvideoidになったら
+        case 4: // videoIdをもとにPlayerや歌詞の準備をする
+          if (beforeVideoId === videoId) { // videoIdが変わってないとき
+            if (isShufflePlaying) { // もしシャッフル再生中に同じvideoIdになったら
               seekChange(0);
               setIsPlaying(true);
               playerRef.current.playVideo();
               instAudioRef.current.play();
               vocalAudioRef.current.play();
-              synkSeekOfMusicAndYoutubeApi();
+              syncSeekOfMusicAndYoutubeApi();
               setIsShufflePlaying(false);
             }
 
             if (isChangeLyricForm) { // 歌詞に変更があった時
               try {
-                const result = await FormPost.updateLyricInDB(videoid, lyric);
+                const result = await FormPost.updateLyricInDB(videoId, lyric);
               
                 if (result.error) { // エラーがあればエラーメッセージをセット
                   setLyricFormUrlErrorMessage('歌詞の更新中にエラーが発生したようです: ' + result.error);
@@ -358,18 +358,18 @@ const Player = () => {
                 setLyricFormUrlErrorMessage('サーバーへの接続中にエラーが発生しました');
               }              
             }
-          } else { // 新しく入力されたvideoidのurlだったら
-            setBeforeVideoid(videoid);
+          } else { // 新しく入力されたvideoIdのurlだったら
+            setBeforeVideoId(videoId);
             try {
-              const datas = await FormPost.Demucs(youtubeUrl, videoid, lyric); // 曲情報を取得
+              const data = await FormPost.separateMusic(youtubeUrl, videoId, lyric); // 曲情報を取得
               setIsInstWaveFormerReady(false);
               setIsVocalWaveFormerReady(false);
               setIsYoutubeApiReady(false);
               setIsMusicsReady(false);
   
-              setYoutubeApiVideoId(videoid);
-              initializeAudio(datas['path']);
-              setEveryoneHistory(datas['history']);
+              setYoutubeApiVideoId(videoId);
+              initializeAudio(data['path']);
+              setEveryoneHistory(data['history']);
               if (!isTimestampLyric) { // もし歌詞がタイムスタンプ式で事前処理がなされてなかったら
                 setPlayerLyricList(
                   lyric.split('\n').map(line => ({ lyric: line }))
@@ -382,7 +382,7 @@ const Player = () => {
               if (lyricScrollBoxRef.current) {//歌詞のスクロールを一番上にする
                 lyricScrollBoxRef.current.scrollTop = 0;
               }
-              setHistoryDatas(datas['title'], videoid);
+              setHistoryData(data['title'], videoId);
             } catch (error) {
               console.error('Error fetching data:', error);
             }
@@ -568,7 +568,7 @@ const Player = () => {
       playerRef.current.playVideo();
       instAudioRef.current.play();
       vocalAudioRef.current.play();
-      synkSeekOfMusicAndYoutubeApi();
+      syncSeekOfMusicAndYoutubeApi();
     }
     setIsPlaying(!isPlaying);
     resetControlTimeout();
@@ -591,11 +591,9 @@ const Player = () => {
   };
 
   const calculateVolume = (value) => {//value(0~100)
-    const caliculatedVolume = (value/100)**0.8;
-    // value を 0.0 と 99.0 の範囲にクランプ
-    const clampedvolume = Math.max(0.0, Math.min(caliculatedVolume, 100.0));
-    // log₁₀₀(clampedValue + 1) を計算
-    return clampedvolume;
+    const calculatedVolume = (value/100)**0.8;// value を 0.0 と 100.0 の範囲にクランプ
+    const clampedVolume = Math.max(0.0, Math.min(calculatedVolume, 100.0));// log₁₀₀(clampedVolume + 1) を計算
+    return clampedVolume;
   };
 
   const handleOverlayClick = () => {//オーバーレイがクリックされたときに呼ばれる関数
@@ -635,14 +633,14 @@ const Player = () => {
       instAudioRef.current.play();
       vocalAudioRef.current.play();
 
-      synkSeekOfMusicAndYoutubeApi();
+      syncSeekOfMusicAndYoutubeApi();
       
     } else {
       console.error('YouTube player is not ready');
     }
   };
 
-  const synkSeekOfMusicAndYoutubeApi = () => {
+  const syncSeekOfMusicAndYoutubeApi = () => {
     setTimeout(() => {
       // instAudioRefとplayerRefのcurrentTimeがどれだけずれているかを計算
       const timeDifference = Math.abs(instAudioRef.current.currentTime - playerRef.current.getCurrentTime());
@@ -742,15 +740,15 @@ const Player = () => {
       playerRef.current.playVideo();
       instAudioRef.current.play();
       vocalAudioRef.current.play();
-      synkSeekOfMusicAndYoutubeApi();
+      syncSeekOfMusicAndYoutubeApi();
     } else if (isShuffling) {
   
-      const videoDatas = await FormPost.fetchRandomMusics(1);
-      if (videoDatas && videoDatas.length > 0) {
+      const videoData = await FormPost.fetchRandomMusics(1);
+      if (videoData && videoData.length > 0) {
         setIsShufflePlaying(true);
   
-        const videoData = videoDatas[0]; // 配列の最初の要素にアクセス
-        const url = 'https://www.youtube.com/watch?v=' + videoData['videoid'];
+        const videoData = videoData[0]; // 配列の最初の要素にアクセス
+        const url = 'https://www.youtube.com/watch?v=' + videoData['videoId'];
         setYoutubeUrl(url);
         setLyric(videoData['lyric']);
         setIsChangeLyricForm(true);
@@ -795,7 +793,7 @@ const Player = () => {
           playerRef.current.playVideo();
           instAudioRef.current.play();
           vocalAudioRef.current.play();
-          synkSeekOfMusicAndYoutubeApi();
+          syncSeekOfMusicAndYoutubeApi();
           setIsShufflePlaying(false);
         }, 1000);
       }
@@ -890,7 +888,7 @@ const Player = () => {
           <Typography variant='h5' sx={{ marginBottom: 2 }}>あなたへのオススメ！</Typography>
             {recommendation.map((song, index) => (
               <Typography key={index} sx={{ marginBottom: 1 }}>
-                <Link href={`${hostUrl}/search_id/${song.videoid}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
+                <Link href={`${hostUrl}/search_id/${song.videoId}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
                   {song.title}
                 </Link>
               </Typography>
@@ -975,7 +973,7 @@ const Player = () => {
                     />
                     <Button
                       variant='contained'
-                      onClick={handleSearchlyric}
+                      onClick={handleSearchLyric}
                       sx={{ marginLeft: 'auto', backgroundColor: '#555', color: 'white', '&:hover': { backgroundColor: '#333' } }}
                     >
                       歌詞検索
@@ -1031,7 +1029,7 @@ const Player = () => {
             <Typography variant='h5' sx={{ marginBottom: 2 }}>あなたの履歴</Typography>
             {yourHistory.map((song, index) => (
               <Typography key={index} sx={{ marginBottom: 1 }}>
-                <Link href={`${hostUrl}/search_id/${song.videoid}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
+                <Link href={`${hostUrl}/search_id/${song.videoId}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
                   {song.title}
                 </Link>
               </Typography>
@@ -1045,7 +1043,7 @@ const Player = () => {
             <Typography variant='h5' sx={{ marginBottom: 2 }}>みんなの履歴</Typography>
             {everyoneHistory.map((song, index) => (
               <Typography key={index} sx={{ marginBottom: 1 }}>
-                <Link href={`${hostUrl}/search_id/${song.videoid}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
+                <Link href={`${hostUrl}/search_id/${song.videoId}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
                   {song.title}
                 </Link>
               </Typography>
@@ -1080,7 +1078,6 @@ const Player = () => {
             playerVars: {
               autoplay: 0,
               controls: 0,
-              modestbranding: 1,
               fs: 0,
               iv_load_policy: 3,
               rel: 0,
@@ -1369,7 +1366,7 @@ const Player = () => {
                 position: 'absolute',
                 bottom: '55px',
                 right: '60px', // 右から60pxに配置（FullScreenボタンとの間隔を確保）
-                color: isLooping ? 'skyblue' : 'white', // ループ中は色を変える
+                color: isLooping ? 'skyBlue' : 'white', // ループ中は色を変える
               }}
             >
               <LoopIcon />
@@ -1382,7 +1379,7 @@ const Player = () => {
                 position: 'absolute',
                 bottom: '55px',
                 right: '110px', // 右から110pxに配置（他のボタンとの間隔を確保）
-                color: isShuffling ? 'skyblue' : 'white', // シャッフル中は色を変える
+                color: isShuffling ? 'skyBlue' : 'white', // シャッフル中は色を変える
               }}
             >
               <ShuffleIcon />
@@ -1439,5 +1436,3 @@ const Player = () => {
     </Box>
   );
 }
-
-export default Player;
