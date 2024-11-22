@@ -9,7 +9,7 @@ export const LyricsCopy = () => {
   const handleLyricCopy = async () => {
     try {
       const postUrl=[url];
-      const result = await FormPost.getLyricBySites(postUrl)
+      const result = await FormPost.getLyricFromSites(postUrl)
       let lyric="";
       if (result['lyric']) { // 修正箇所
         lyric = result['lyric']

@@ -62,7 +62,7 @@ export const Playlist = () => {
             const existCheck = await FormPost.checkVideoExist(data['videoId']);
             if (!existCheck.exists) {//曲がデータベースになかったら
               const url = 'https://www.youtube.com/watch?v=' + data['videoId'];
-              const lyric = await FormPost.getLyricByWeb(data['title'], 'ja');
+              const lyric = await FormPost.getLyricFromSites(data['title'], 'ja');
               const updateLyric = lyric === 'Null' ? '' : lyric;
               const videoCheck = await FormPost.separateMusic(url, data['videoId'], updateLyric);
               if (!videoCheck) {

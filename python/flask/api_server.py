@@ -13,7 +13,6 @@ app = Flask(__name__)
 
 output_dir = "/musics"
 
-
 def remove_list_in_url(url):
     index = url.find("&list")
     if index == -1:
@@ -52,7 +51,7 @@ def separate_music():
                 return jsonify({"error": "Failed to process video data"}), 500
 
             save_video_data = {
-                "videoId": temp_movie_data.get("id"),
+                "video_id": temp_movie_data.get("id"),
                 "title": temp_movie_data.get("title"),
                 "site": temp_movie_data.get("extractor"),
                 "lyric": lyric,

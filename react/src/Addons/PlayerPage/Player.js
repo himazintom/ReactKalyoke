@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Box, Slider, Button, Typography, Checkbox, TextField, FormControlLabel, Link } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import YouTube from 'react-youtube';
-import Waveform from './Waveform';
+// import Waveform from './Waveform';
 import Cookies from 'js-cookie';
 
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
@@ -76,11 +76,8 @@ export const Player = () => {
 
   const fetchRecommendData = useCallback(async () => {
     const recommends = await FormPost.fetchRandomMusics(5);
-    let recommendsData = recommends.map(item => ({
-      title: item.title,
-      videoId: item.videoId
-    }));
-    setRecommendations(recommendsData);
+    console.log("recommends", recommends);
+    setRecommendations(recommends);
   },[]);
 
   useEffect(() => {
@@ -244,7 +241,7 @@ export const Player = () => {
     if(title=='Null'){
       setLyricFormUrlErrorMessage('歌詞は見つかりませんでした: title missing'); // エラーメッセージを設定\
     }
-    const searchedLyric = await FormPost.getLyricByWeb(title, language);
+    const searchedLyric = await FormPost.searchLyricFromWeb(title, language);
     // console.log('searchedLyric',searchedLyric);
     if(searchedLyric=='Null' || searchedLyric==''){
       setLyricFormUrlErrorMessage('歌詞は見つかりませんでした'); // エラーメッセージを設定

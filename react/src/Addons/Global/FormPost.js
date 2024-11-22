@@ -1,8 +1,8 @@
 import axios from 'axios';
 
 const apiUrl = "";// = process.env.REACT_APP_API_URL;//url
-const googleAPIKey = process.env.REACT_GOOGLE_API_KEY;//url
-const searchEngineID = process.env.REACT_SEARCH_ENGINE_ID;//url
+const googleAPIKey = process.env.REACT_APP_GOOGLE_API_KEY;//url
+const searchEngineID = process.env.REACT_APP_SEARCH_ENGINE_ID;//url
 
 export const checkVideoExist= async (videoId) => {
   try {
@@ -92,7 +92,8 @@ export const fetchEveryoneHistory = async () => {
       title: item.title,
       videoId: item.video_id
     }));
-    return response.data;
+    console.log("History respose.data", response.data, "data", data);
+    return data;
   } catch (error) {
     console.error('Error fetching data:', error);
     return [];
@@ -114,6 +115,7 @@ export const fetchRandomMusics = async (requestCount = 1) => {
       title: item.title,
       videoId: item.video_id
     }));
+    console.log("respose.data", response.data, "data", data);
     return data;
   } catch (error) {
     console.error('Error fetching data:', error);
@@ -140,7 +142,7 @@ export const fetchTitleByVideoId = async (videoId) => {
   }
 };
 
-export const getLyricBySites = async (urls) => {
+export const getLyricFromSites = async (urls) => {
   console.log("歌詞取得します！");
   try {
     const response = await axios.post(`${apiUrl}/api/get_lyric_from_sites`, {
@@ -159,8 +161,8 @@ export const getLyricBySites = async (urls) => {
   }
 };
 
-export const getLyricByWeb = async (title, language) =>{//titleとlanguageをもとに該当する歌詞データを返す
-  const fetchLyricSites = async (title, language) => {
+export const searchLyricFromWeb = async (title, language) =>{//titleとlanguageをもとに該当する歌詞データを返す
+  const searchLyricSites = async (title, language) => {
     console.log("タイトルは...", title);
     const url = "https://www.googleapis.com/customsearch/v1";
     const apiKey = googleAPIKey;  // ここにあなたのGoogle APIキーを入れてください
@@ -200,11 +202,11 @@ export const getLyricByWeb = async (title, language) =>{//titleとlanguageをも
     }
   };
   
-  const urls = await fetchLyricSites(title, language);
+  const urls = await searchLyricSites(title, language);
   if(!urls){//サイトが見つからなかったらNullを返す
     return 'Null';
   }
-  const lyricData = await getLyricBySites(urls);
+  const lyricData = await getLyricFromSites(urls);
   // console.log("lyricData.lyric", lyricData.lyric);
 
 

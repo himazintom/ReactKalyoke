@@ -1,32 +1,24 @@
 {
-  "name": "ui-test",
-  "version": "0.1.0",
-  "private": true,
   "dependencies": {
-    "@emotion/react": "^11.13.0",
+    "@emotion/react": "^11.13.3",
     "@emotion/styled": "^11.13.0",
-    "@mui/icons-material": "^5.16.6",
-    "@mui/material": "^5.16.6",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@vercel/speed-insights": "^1.0.12",
-    "@wavesurfer/react": "^1.0.7",
-    "axios": "^1.7.4",
-    "express": "^4.19.2",
-    "framer-motion": "^11.11.11",
+    "@mui/icons-material": "^6.1.7",
+    "@mui/material": "^6.1.7",
+    "axios": "^1.7.7",
+    "framer-motion": "^11.11.17",
     "js-cookie": "^3.0.5",
-    "mysql": "^2.18.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.1",
-    "react-scripts": "^5.0.1",
+    "react-router-dom": "^6.28.0",
     "react-youtube": "^10.1.0",
-    "sass": "^1.77.8",
-    "standardized-audio-context": "^25.3.76",
-    "tone": "^15.0.4",
-    "wavesurfer.js": "^7.8.4",
-    "web-vitals": "^2.1.4"
+    "sass": "^1.81.0",
+    "web-vitals": "^4.2.4"
+  },
+  "name": "react",
+  "version": "1.0.0",
+  "main": "index.js",
+  "devDependencies": {
+    "react-scripts": "^5.0.1"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -34,12 +26,9 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
   "browserslist": {
     "production": [
       ">0.2%",

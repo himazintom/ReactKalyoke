@@ -1,43 +1,43 @@
 # ベースイメージとしてNode.jsを使用
-FROM node:23-alpine3.19
+FROM node:16-alpine
 
 # アプリケーションディレクトリを作成
 WORKDIR /app
 
-# Dockerfile内で環境変数を使いたい場合には、以下のようにする
+# 環境変数の設定
 ARG REACT_APP_HOST_URL
-ENV REACT_APP_HOST_URL=${REACT_APP_HOST_URL}
-
 ARG REACT_APP_API_URL
-ENV REACT_APP_API_URL=${REACT_APP_API_URL}
-
 ARG REACT_APP_GOOGLE_API_KEY
-ENV REACT_APP_GOOGLE_API_KEY=${REACT_APP_GOOGLE_API_KEY}
-
 ARG REACT_APP_SEARCH_ENGINE_ID
-ENV REACT_APP_SEARCH_ENGINE_ID=${REACT_APP_SEARCH_ENGINE_ID}
+
+ENV REACT_APP_HOST_URL=${REACT_APP_HOST_URL} \
+    REACT_APP_API_URL=${REACT_APP_API_URL} \
+    REACT_APP_GOOGLE_API_KEY=${REACT_APP_GOOGLE_API_KEY} \
+    REACT_APP_SEARCH_ENGINE_ID=${REACT_APP_SEARCH_ENGINE_ID}
 
 # package.jsonとpackage-lock.jsonをコピー
 COPY package*.json ./
 
-# 依存関係をインストール
-# RUN npm install
+# 依存関係を一度のRUNコマンドでインストール
+RUN npm install
 
 # アプリケーションのソースコードをコピー
 COPY . .
 
-# アプリケーションをビルド
+# ビルド
+ENV NODE_ENV=production
 RUN npm run build
 
-# 静的ファイルを提供するために、Nginxを使用
+# Nginxステージ
 FROM nginx:1.27.2-alpine
 
-# 必要なファイルをコピー
+# 必要なファイルをコピー（すべてを1つのRUNコマンドに）
 COPY --from=0 /app/build /usr/share/nginx/html
 COPY keys /keys
 COPY conf.d /etc/nginx/conf.d
 COPY nginx.conf /etc/nginx/nginx.conf
 COPY docker-entrypoint.sh /usr/local/bin/
+
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # エントリーポイントとコマンドを設定
