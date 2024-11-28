@@ -8,27 +8,18 @@ import shutil
 def make_kalyoke(url, dir):
     output_dir = dir
     folder_sets.SCF(output_dir)
-
-    # duration=ytdl.get_video_duration(url)
-    # max_time=7*60
-    # if status=="free":
-    #     max_time=15*60
-    # if status=="singer":
-    #     max_time=20*60
-    # if(duration>max_time):
-    #     return "time long"
+    
     movie_info = youtube_dl.download_mp3_with_info(url, output_dir)
     movie_name = movie_info["title"]
     movie_id = movie_info["id"]
     movie_extractor = movie_info["extractor_key"]
 
-    # #print(f"before={movie_name}, after={after_movie_name}")
     sinput_path = f"{output_dir}/{movie_id}.mp3"
     soutput_dir = f"{output_dir}/{movie_extractor}/{movie_id}"
     folder_sets.SCF(soutput_dir)
     audio_sep.single_separate(
         sinput_path, soutput_dir, device="cuda"
-    )  # *^* AS.single_separate(sinput_path,soutput_dir,device="cpu")
+    )
     if os.path.exists(f"{soutput_dir}/htdemucs/{movie_id}/no_vocals.mp3"):
         folder_sets.rename_file(
             f"{soutput_dir}/htdemucs/{movie_id}/no_vocals.mp3",

@@ -54,7 +54,7 @@ def get_playlist_video_info(playlist_url):
             if "entries" in info:
                 video_info_list = [
                     {
-                        "videoid": video_data["id"],
+                        "videoId": video_data["id"],
                         "title": video_data.get("title", "タイトルがありません"),
                         "thumbnail": video_data.get(
                             "thumbnail", "サムネイルがありません"

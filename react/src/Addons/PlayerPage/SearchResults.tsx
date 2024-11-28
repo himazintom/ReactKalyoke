@@ -4,13 +4,12 @@ import { styled } from '@mui/material/styles';
 
 const ScrollableResults = styled(Box)(({ theme }) => ({
   position: 'absolute',
-  top: '64px', // Header height
+  top: '64px',
   right: 0,
   width: '300px',
   maxHeight: '400px',
   overflowY: 'auto',
   zIndex: 1000,
-  // backgroundColor: theme.palette.background.paper, // 背景色の設定
   borderRadius: '4px',
   '&::-webkit-scrollbar': {
     width: '4px',
@@ -24,14 +23,22 @@ const ScrollableResults = styled(Box)(({ theme }) => ({
   },
 }));
 
+// aタグのスタイルを別途定義
+const StyledLink = styled('a')({
+  textDecoration: 'none',
+  color: 'inherit',
+  display: 'block',
+  width: '100%',
+  height: '100%'
+});
+
 const SearchResultItem = styled(motion(Paper))(({ theme }) => ({
   margin: '8px',
-  padding: '12px',
   cursor: 'pointer',
-  transition: 'background-color 0.3s ease', // スムーズな背景変化
-  backgroundColor: theme.palette.background.default, // デフォルトの背景色
+  transition: 'background-color 0.3s ease',
+  backgroundColor: theme.palette.background.default,
   '&:hover': {
-    backgroundColor: '#f0f0f0' // 白とはいいろに変更
+    backgroundColor: '#f0f0f0'
   },
 }));
 
@@ -46,30 +53,26 @@ export const SearchResultList = ({ searchResults = [], hostUrl = '' }) => {
           exit={{ opacity: 0 }}
         >
           {searchResults.map((result, index) => (
-            <SearchResultItem
+            <StyledLink 
               key={index}
-              initial={{ x: 100, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 100, opacity: 0 }}
-              transition={{
-                type: "spring",
-                stiffness: 100,
-                damping: 15,
-                delay: index * 0.1
-              }}
-              elevation={1}
+              href={`${hostUrl}/search_id/${result.videoId}`}
             >
-              <a 
-                href={`${hostUrl}/search_id/${result.videoId}`}
-                style={{ 
-                  textDecoration: 'none', 
-                  color: 'inherit',
-                  display: 'block'
+              <SearchResultItem
+                initial={{ x: 100, opacity: 0 }}
+                animate={{ x: 0, opacity: 1 }}
+                exit={{ x: 100, opacity: 0 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 15,
+                  delay: index * 0.1
                 }}
+                elevation={1}
+                sx={{ padding: '12px' }} // paddingをここに移動
               >
                 {result.title}
-              </a>
-            </SearchResultItem>
+              </SearchResultItem>
+            </StyledLink>
           ))}
         </ScrollableResults>
       )}

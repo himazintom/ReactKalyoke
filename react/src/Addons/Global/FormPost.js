@@ -23,7 +23,6 @@ export const checkVideoExist= async (videoId) => {
 
 export const separateMusic = async (url, videoId, lyric) => {
   try {
-    // JSON データを作成して送信
     const response = await axios.post(`${apiUrl}/api/separate_music`, {
       url: url,
       videoId: videoId,
@@ -33,7 +32,21 @@ export const separateMusic = async (url, videoId, lyric) => {
         'Content-Type': 'application/json'
       }
     });
-    return response.data;
+    
+    console.log("受信データ:", response.data);
+    // データが配列であることを確認
+    const dataArray = response.data;
+    
+    let data = {
+      path: response.data.path,
+      title: response.data.title,
+      history: response.data.history.map(historyItem => ({
+        title: historyItem.title,
+        videoId: historyItem.video_id//名前の変更
+      }))
+    };
+    console.log("返すデータ",data);
+    return data;
   } catch (error) {
     console.error('Error fetching data:', error);
     return null;
@@ -92,7 +105,6 @@ export const fetchEveryoneHistory = async () => {
       title: item.title,
       videoId: item.video_id
     }));
-    console.log("History respose.data", response.data, "data", data);
     return data;
   } catch (error) {
     console.error('Error fetching data:', error);
@@ -190,12 +202,11 @@ export const searchLyricFromWeb = async (title, language) =>{//titleとlanguage�
   
       if (data.items) {
         urls = data.items.map(item => item.formattedUrl); // formattedUrlを抽出してリストに格納
-        console.log('タイトルをもとに見つかったurls=', urls);
+        // console.log('タイトルをもとに見つかったurls=', urls);
       } else {
-        console.error('歌詞サイトが見つかりませんでした。');
+        // console.error('歌詞サイトが見つかりませんでした。');
       }
-  
-      return urls; // 結果としてURLリストを返す
+      return urls;
   
     } catch (error) {
       console.error("Error fetching lyric sites:", error);
@@ -207,11 +218,9 @@ export const searchLyricFromWeb = async (title, language) =>{//titleとlanguage�
     return 'Null';
   }
   const lyricData = await getLyricFromSites(urls);
-  // console.log("lyricData.lyric", lyricData.lyric);
 
-
-  if(lyricData.lyric){
-    return lyricData.lyric;
+  if(lyricData['lyric']){
+    return lyricData['lyric'];
   }
   return 'Null'
 }

@@ -42,7 +42,7 @@ def separate_music():
 
         url_non_list = remove_list_in_url(url)
         path = ""
-
+        
         id = kalyoke_db.get_id_from_database("videos", "video_id", video_id)
         if id is None:  # 曲がデータベースに存在しない場合
             temp_movie_data = demucs.make_kalyoke(url_non_list, output_dir)
@@ -59,6 +59,7 @@ def separate_music():
                 "register_date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "update_date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
+            print("save_video_data",save_video_data)
             path = save_video_data["folder_path"]
             video_title = save_video_data["title"]
 
@@ -120,7 +121,6 @@ def fetch_lyric():
     data = request.get_json()
     video_id = data.get("videoId")
     id = kalyoke_db.get_id_from_database("videos", "video_id", video_id)
-    print("video_id は", video_id, "今回のid ======", id)
     if id is not None:
         return kalyoke_db.get_data_from_database("videos", id, "lyric")
     return "Null"
@@ -159,9 +159,7 @@ def fetch_random_music(requestCount):
 def get_lyric_from_sites():
     data = request.get_json()
     urls = data.get("urls")
-    print("urls", urls)
     sorted_urls = search_lyric.sort_urls_by_domain_priority(urls)
-    print("sorted_urls", sorted_urls)
     lyric = ""
     for url in sorted_urls:
         if search_lyric.check_domain(url):
@@ -176,7 +174,6 @@ def fetch_playlist_data():
     data = request.get_json()
     url = data.get("url")
     playlist_data = youtube_dl.get_playlist_video_info(url)
-    # print("playlist",playlist_data)
 
     return playlist_data
 
@@ -186,8 +183,12 @@ def fetch_video_data_by_str():  # キーワードをもとにDBからビデオ�
     data = request.get_json()
     search_word = data.get("searchWord")
     video_data = kalyoke_db.get_video_id_from_title_str(search_word)
+    
+    # video_idをvideoIdに変換
+    for video in video_data:
+        video["videoId"] = video.pop("video_id")  # video_idをvideoIdに変更
+    
     return video_data
-
 
 # if __name__ == '__main__':　#uwsgiで動作させるときにはいらない
 #     app.run(host="0.0.0.0", port=5000)

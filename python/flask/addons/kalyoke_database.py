@@ -130,15 +130,19 @@ def get_data_from_database(table, id, column_name):
 def add_to_videos_database(data):  # videosデータベースに曲情報を追加
     conn = connect_to_database()
     cursor = conn.cursor()
-    add_video = (
-        "INSERT INTO videos "
-        "(site, video_id, title, lyric, folder_path, register_date, update_date) "
-        "VALUES (%(site)s, %(video_id)s, %(title)s, %(lyric)s, %(folder_path)s, "
-        "%(register_date)s, %(update_date)s)"
-    )
-    cursor.execute(add_video, data)
-    conn.commit()
-    close_database_connection(cursor, conn)
+    try:
+        add_video = (
+            "INSERT INTO videos "
+            "(site, video_id, title, lyric, folder_path, register_date, update_date) "
+            "VALUES (%(site)s, %(video_id)s, %(title)s, %(lyric)s, %(folder_path)s, "
+            "%(register_date)s, %(update_date)s)"
+        )
+        cursor.execute(add_video, data)
+        conn.commit()
+    except Exception as e:
+        print(f"Error occurred: {e}")  # エラーメッセージを表示
+    finally:
+        close_database_connection(cursor, conn)  # 確実に接続を閉じる
 
 
 def update_videos_database(video_id, lyric):  # videosデータベースの歌われた情報を更新
@@ -184,7 +188,6 @@ def get_video_id_from_title_str(search_word):
         # ログを取るなど、エラーハンドリング
         print(f"Error occurred: {e}")
         return []
-
 
 def add_user_data_signup(email, password, token):  # 新しくユーザー情報を登録する
     result = get_id_from_database("users", "email", email)

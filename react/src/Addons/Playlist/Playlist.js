@@ -56,17 +56,17 @@ export const Playlist = () => {
         case 3:
           const data = playlistData;
           let errorMessage = [];
-
+            
           for (let i = 0; i < data.length; i++) {
-            const data = data[i];
-            const existCheck = await FormPost.checkVideoExist(data['videoId']);
+            const videoData = data[i];
+            const existCheck = await FormPost.checkVideoExist(videoData['videoId']);
             if (!existCheck.exists) {//曲がデータベースになかったら
-              const url = 'https://www.youtube.com/watch?v=' + data['videoId'];
-              const lyric = await FormPost.getLyricFromSites(data['title'], 'ja');
+              const url = 'https://www.youtube.com/watch?v=' + videoData['videoId'];
+              const lyric = await FormPost.getLyricFromSites(videoData['title'], 'ja')['lyric'];
               const updateLyric = lyric === 'Null' ? '' : lyric;
-              const videoCheck = await FormPost.separateMusic(url, data['videoId'], updateLyric);
+              const videoCheck = await FormPost.separateMusic(url, videoData['videoId'], updateLyric);
               if (!videoCheck) {
-                errorMessage.push(`${data['title']} (${data['videoId']}) の用意中にエラーが起こりました`);
+                errorMessage.push(`${videoData['title']} (${videoData['videoId']}) の用意中にエラーが起こりました`);
               }
             }
             setIdMovieProcess(i);
@@ -114,7 +114,9 @@ export const Playlist = () => {
       }}>
         {youtubePlaylistUrlErrorMessage && (
           <Typography color='error' sx={{ width: '100%', textAlign: 'center' }}>
-            {youtubePlaylistUrlErrorMessage}
+            {youtubePlaylistUrlErrorMessage.split('\n').map((error, index) => (
+              <div key={index}>{error}</div> // 配列の各エラーメッセージを改行して表示
+            ))}
           </Typography>
         )}
 

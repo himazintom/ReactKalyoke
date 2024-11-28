@@ -156,7 +156,9 @@ export const Header = () => {
 
   return (
     <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" className="header-gradient-background">
+      <AppBar position="static" sx={{ 
+        background: 'linear-gradient(120deg, #474747, #000000)'
+      }}>
         <Toolbar sx={{ height: '64px' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
             <Link to="/">

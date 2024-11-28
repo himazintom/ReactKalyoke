@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import YouTube from 'react-youtube';
 // import Waveform from './Waveform';
 import Cookies from 'js-cookie';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import PauseIcon from '@mui/icons-material/Pause';
@@ -314,7 +315,7 @@ export const Player = () => {
             if (beforeVideoId !== videoId) { // videoIdが変わったとき
               setCurrentLyricIndex(2);//1行目の歌詞を真ん中に来るように
             }
-            setIsPlayerLyricReady(true);//これでtimestamp付きの歌詞の場合の準備は完了��
+            setIsPlayerLyricReady(true);//これでtimestamp付きの歌詞の場合の準備は完了
           }else{
             setCurrentLyricIndex(-1);//文字が大きくなったり、透明になったりしないように
           }
@@ -399,7 +400,7 @@ export const Player = () => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [instVolume, setInstVolume] = useState(100);
-  const [vocalVolume, setVocalVolume] = useState(30);
+  const [vocalVolume, setVocalVolume] = useState(10);
   useEffect(() => {
     const instVolume = JSON.parse(Cookies.get('instVolume') || 100);
     if (instVolume) {
@@ -725,7 +726,7 @@ export const Player = () => {
     };
   }, [isFullScreen, toggleFullScreen]);  // toggleFullScreenを依存配列に追加
 
-  const handleEndedMusic = useCallback(async () => {//一個しか関数が生成できないようにする
+  const handleEndedMusic = useCallback(async () => {//一��しか関数が生成できないようにする
     setIsPlaying(false);
     playerRef.current.pauseVideo();
     instAudioRef.current.pause();
@@ -946,37 +947,49 @@ export const Player = () => {
           <Box sx={{ marginBottom: 2 }}>
             <Box sx={{display:'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
               <h3>歌詞</h3>
-              {beforeAutoLyric!= null &&(//検索後に歌詞を元に戻す場合
-                <Button
-                  variant='contained'
-                  onClick={handleUndoAutoLyric}
-                  sx={{ marginLeft: 'auto', backgroundColor: '#555', color: 'white', '&:hover': { backgroundColor: '#333' } }}
-                >
-                  戻す
-                </Button>
-              )}
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                {!isAutoSearchLyric &&(
-                  <>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={isOverseas}
-                          onChange={handleOverseasChange}
-                          style={{ color: 'white' }}
-                        />
-                      }
-                      label='海外の曲か？'
-                    />
+              <Box sx={{ display:'flex', flexDirection: 'row',  justifyContent: 'flex-end'}}>
+                <Box sx={{ display: 'flex', alignItems: 'center'}}>
+                  {beforeAutoLyric!= null &&(//検索後に歌詞を元に戻す場合
                     <Button
                       variant='contained'
-                      onClick={handleSearchLyric}
-                      sx={{ marginLeft: 'auto', backgroundColor: '#555', color: 'white', '&:hover': { backgroundColor: '#333' } }}
+                      onClick={handleUndoAutoLyric}
+                      sx={{ backgroundColor: '#555', color: 'white', '&:hover': { backgroundColor: '#333' } }}
                     >
-                      歌詞検索
+                      戻す
                     </Button>
-                  </>
-                )}
+                  )}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                  {isAutoSearchLyric ? (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <CircularProgress size={24} sx={{ color: 'white' }} />
+                      <Typography sx={{ color: 'white' }}>
+                        歌詞を検索中...
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={isOverseas}
+                            onChange={handleOverseasChange}
+                            style={{ color: 'white' }}
+                          />
+                        }
+                        label='海外の曲か？'
+                        sx={{ margin: 0 }}
+                      />
+                      <Button
+                        variant='contained'
+                        onClick={handleSearchLyric}
+                        sx={{ backgroundColor: '#555', color: 'white', '&:hover': { backgroundColor: '#333' } }}
+                      >
+                        歌詞検索
+                      </Button>
+                    </>
+                  )}
+                </Box>
               </Box>
             </Box>
             <TextField
@@ -995,16 +1008,29 @@ export const Player = () => {
           
           
           <Box sx={{ textAlign: 'center' }}>
-            {prepareKaraokeStatus==0 && (
+            {prepareKaraokeStatus === 0 ? (
               <Button
                 variant='contained'
-                onClick={()=>{
+                onClick={() => {
                   setPrepareKaraokeStatus(1);
                 }}
-                sx={{ width: '200px', height: '50px', backgroundColor: '#333', color: 'white', '&:hover': { backgroundColor: '#111' } }}
+                sx={{ 
+                  width: '200px', 
+                  height: '50px', 
+                  backgroundColor: '#333', 
+                  color: 'white', 
+                  '&:hover': { backgroundColor: '#111' } 
+                }}
               >
-                ③Sing
+                Sing
               </Button>
+            ) : (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50px' }}>
+                <CircularProgress sx={{ color: 'white' }} />
+                <Typography sx={{ ml: 2, color: 'white' }}>
+                  カラオケの準備をしています...
+                </Typography>
+              </Box>
             )}
           </Box>
         </Box>
