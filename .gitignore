@@ -2,6 +2,8 @@
 *.conf
 /python/init.sh
 /react/docker-entrypoint.sh
+/sqlmemo.txt
+
 
 # 環境ファイル
 .env
