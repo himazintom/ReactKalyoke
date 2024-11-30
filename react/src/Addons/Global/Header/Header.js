@@ -17,6 +17,7 @@ import { SearchResultList } from '../../PlayerPage/SearchResults.tsx';
 import './Header.css';
 
 const headerItems = [
+  { name: "カラオケ！したい奴はここを押せ！", path: "/" },
   { name: "使い方", path: "/usage" },
   { name: "歌詞コピー", path: "/lyrics_copy" },
   { name: "プレイリスト", path: "/playlist" },

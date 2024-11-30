@@ -726,7 +726,7 @@ export const Player = () => {
     };
   }, [isFullScreen, toggleFullScreen]);  // toggleFullScreenを依存配列に追加
 
-  const handleEndedMusic = useCallback(async () => {//一��しか関数が生成できないようにする
+  const handleEndedMusic = useCallback(async () => {//一度しか関数が生成できないようにする
     setIsPlaying(false);
     playerRef.current.pauseVideo();
     instAudioRef.current.pause();
@@ -742,13 +742,14 @@ export const Player = () => {
     } else if (isShuffling) {
   
       const videoData = await FormPost.fetchRandomMusics(1);
+      // console.log("videoData",videoData);
       if (videoData && videoData.length > 0) {
         setIsShufflePlaying(true);
   
-        const videoData = videoData[0]; // 配列の最初の要素にアクセス
-        const url = 'https://www.youtube.com/watch?v=' + videoData['videoId'];
+        const data = videoData[0];// 配列の最初の要素にアクセス
+        const url = 'https://www.youtube.com/watch?v=' + data['videoId'];
         setYoutubeUrl(url);
-        setLyric(videoData['lyric']);
+        setLyric(data['lyric']);
         setIsChangeLyricForm(true);
       }
     }

@@ -41,7 +41,7 @@ export const Usage = () => {
             position: 'relative',
             zIndex: 1
           }}>
-            使い方
+            使い方(簡単3ステップ！)
           </Box>
         </Box>
 
@@ -62,7 +62,7 @@ export const Usage = () => {
             height: '100%'
           }
         }}>
-          <YouTube videoId="OA_vj-UydTU" opts={opts} />
+          <YouTube videoId="az5n7XAMYZE" opts={opts} />
         </Box>
         
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
@@ -155,13 +155,17 @@ export const Usage = () => {
                 gap: '0.5rem',
                 textShadow: '1px 1px 2px rgba(0, 0, 0, 0.2)'
               }}>
-                動画のURLを入力する
+                歌詞を入力する（空白でも可）
               </Box>
               <Box component="p" sx={{
                 marginTop: '0.5rem',
-                color: 'rgba(255, 255, 255, 0.9)'
+                color: 'rgba(255, 255, 255, 0.9)',
+                whiteSpace: 'pre-line'
               }}>
-                歌詞を入力してください（自動入力を使用できます）
+                {`自動入力というボタンを押してみて、歌詞が見つからなかったら、
+                コピーしたり、手で打ち込んでください
+
+                ※ サイトから歌詞をコピーしたい場合は、上のタブの「歌詞コピー」をクリックしてください`}
               </Box>
             </Box>
           </Box>
@@ -211,25 +215,9 @@ export const Usage = () => {
                 marginTop: '0.5rem',
                 color: 'rgba(255, 255, 255, 0.9)'
               }}>
-                準備が整ったらSingボタンを押して開始します
+                あとは音量を調整してカラオケを楽しむだけ！
+                ※新規の曲の場合処理に時間がかかることがあります
               </Box>
-            </Box>
-          </Box>
-
-          {/* Note */}
-          <Box sx={{
-            marginTop: '2rem',
-            padding: '1rem',
-            background: 'rgba(255, 255, 255, 0.15)',
-            borderRadius: '0.5rem',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(4px)'
-          }}>
-            <Box component="p" sx={{
-              fontSize: '0.875rem',
-              color: 'rgba(255, 255, 255, 0.9)'
-            }}>
-              ※ サイトからコピーしたい場合は、上のタブの「歌詞コピー」をクリックしてください
             </Box>
           </Box>
         </Box>
