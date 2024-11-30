@@ -124,6 +124,7 @@ export const fetchRandomMusics = async (requestCount = 1) => {
     }
     // APIから返された配列を使って新しいデータ配列を作成
     let data = response.data.map(item => ({
+      title: item.title,
       lyric: item.lyric,
       videoId: item.video_id
     }));
