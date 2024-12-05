@@ -1,8 +1,9 @@
+import React from 'react';
 import { Box, Paper } from '@mui/material';
 import { motion, AnimatePresence, color } from 'framer-motion';
 import { styled } from '@mui/material/styles';
 
-const ScrollableResults = styled(Box)(({ theme }) => ({
+const ScrollableResults = styled(motion.div)(({ theme }) => ({
   position: 'absolute',
   top: '64px',
   right: 0,
@@ -32,7 +33,7 @@ const StyledLink = styled('a')({
   height: '100%'
 });
 
-const SearchResultItem = styled(motion(Paper))(({ theme }) => ({
+const SearchResultItem = styled(motion.div)(({ theme }) => ({
   margin: '8px',
   cursor: 'pointer',
   transition: 'background-color 0.3s ease',
@@ -42,12 +43,16 @@ const SearchResultItem = styled(motion(Paper))(({ theme }) => ({
   },
 }));
 
-export const SearchResultList = ({ searchResults = [], hostUrl = '' }) => {
+interface SearchResult {
+  videoId: string;
+  title: string;
+}
+
+export const SearchResultList = ({ searchResults = [] as SearchResult[], hostUrl = '' }) => {
   return (
     <AnimatePresence>
       {searchResults.length > 0 && (
         <ScrollableResults
-          component={motion.div}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -67,7 +72,6 @@ export const SearchResultList = ({ searchResults = [], hostUrl = '' }) => {
                   damping: 15,
                   delay: index * 0.1
                 }}
-                elevation={1}
                 sx={{ padding: '12px' }} // paddingをここに移動
               >
                 {result.title}
