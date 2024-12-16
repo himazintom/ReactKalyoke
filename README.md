@@ -3,7 +3,7 @@
 # なんでも歌えるカラオケアプリKalyoke
 ## どんなwebアプリ？
 
-youtubeのURLを入力するだけで、カラオケが歌えるようになるwebアプリです。
+YouTubeのURLを入力するだけで、カラオケが歌えるようになるwebアプリです。
 のプロジェクトはそれをDocker上で動作させるためのコンテナたちになっています。
 <img src="./SystemGraph.png" alt="システム構成図" width="500">
 

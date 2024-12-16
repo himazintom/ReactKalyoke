@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { m } from 'framer-motion';
 
 const apiUrl = "";// = process.env.REACT_APP_API_URL;//url
 const googleAPIKey = process.env.REACT_APP_GOOGLE_API_KEY;//url
@@ -245,18 +246,28 @@ export const fetchPlaylistData = async (url) => {
   }
 };
 
-export const fetchVideoDataByStr = async (searchedWord) => {//文字列をもとにビデオデータの検索を行う
+export const fetchVideoDataByStr = async (searchedWord) => {
   try {
     const response = await axios.post(`${apiUrl}/api/fetch_video_data_by_str`, {
       'searchWord': searchedWord,
-    },{
+    }, {
       headers: {
         'Content-Type': 'application/json'
       }
     });
+
     if (!response.data) {
       throw new Error('No data or incorrect format received from the server');
     }
+
+    // レスポンスデータが配列で、かつ空の場合
+    if (Array.isArray(response.data) && response.data.length === 0) {
+      return [{
+        title: "No Result",
+        videoId: "ORK3BZ9baQo"
+       }];
+    }
+
     return response.data;
   } catch (error) {
     console.error('Error fetching data:', error);

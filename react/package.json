@@ -9,9 +9,11 @@
     "js-cookie": "^3.0.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
+    "react-helmet": "^6.1.0",
     "react-router-dom": "^6.28.0",
     "react-youtube": "^10.1.0",
     "sass": "^1.81.0",
+    "tone": "^15.0.4",
     "web-vitals": "^4.2.4"
   },
   "name": "react",

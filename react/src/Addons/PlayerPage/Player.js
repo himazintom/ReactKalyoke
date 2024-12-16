@@ -33,6 +33,7 @@ export const Player = () => {
       }
     }
   }, []);
+  
   const setLyricByCookie = async(videoId) => {
     const lyric = await FormPost.fetchLyricFromDB(videoId);
     setLyric(lyric);
