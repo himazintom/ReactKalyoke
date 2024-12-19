@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import * as FormPost from '../Global/FormPost';
+import * as FormPost from '../Global/FormPost.tsx';
 import { Box } from '@mui/material';
 
 export const LyricsCopy = () => {
@@ -11,8 +11,8 @@ export const LyricsCopy = () => {
       const postUrl=[url];
       const result = await FormPost.getLyricFromSites(postUrl)
       let lyric="";
-      if (result['lyric']) { // 修正箇所
-        lyric = result['lyric']
+      if (result.lyric) { // 修正箇所
+        lyric = result.lyric
       }
       if (lyric === '') {
         setAnnotation('自動で歌詞が見つかりませんでした');

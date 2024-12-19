@@ -101,6 +101,37 @@ CREATE TABLE users (
     singed_history JSON,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE api_usage_log (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    date DATE NOT NULL,
+    reset_time TIME NOT NULL DEFAULT '17:00:00',
+    endpoint VARCHAR(255) NOT NULL,
+    usage_count INT DEFAULT 0,
+    UNIQUE KEY unique_endpoint_date (date, endpoint)
+);
+
+
+INSERT INTO api_usage_log (date, reset_time, endpoint, usage_count)
+VALUES (CURDATE(), '17:00:00', 'google_api', 1)
+ON DUPLICATE KEY UPDATE usage_count = usage_count + 1;
+
+CREATE EVENT IF NOT EXISTS reset_google_api_usage
+ON SCHEDULE EVERY 1 DAY
+STARTS CONCAT(CURDATE(), ' 17:00:00')
+DO
+BEGIN
+    -- Google APIの使用回数をリセット
+    UPDATE api_usage_log
+    SET usage_count = 0
+    WHERE endpoint = 'google_api' AND date = CURDATE();
+END$$
+
+SET GLOBAL event_scheduler = ON;
+
+SHOW VARIABLES LIKE 'event_scheduler';
+
+
 ```
 
 #### 5. 各種コンテナ操作用コマンド

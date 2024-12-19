@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Box, TextField, Button, Checkbox, FormControlLabel, Typography, Link } from '@mui/material';
 import { useLocation } from 'react-router-dom';
-import * as FormPost from './FormPost';
+import * as FormPost from './FormPost.tsxS';
 
 
 function UrlForm() {
@@ -55,7 +55,6 @@ function UrlForm() {
         beforeVideoId=videoId
         try {
           const lyric = await FormPost.fetchLyricFromDB(videoId);
-          console.log("lyric=", lyric);
           setlyric(lyric);
         } catch (error) {
           console.error('Error fetching lyric:', error);
@@ -135,7 +134,6 @@ function UrlForm() {
   };
 
   const handleSearchlyric = () => {
-    console.log('検索された歌詞:', lyric);
   };
 
   const handleSing = async () => {
@@ -165,7 +163,6 @@ function UrlForm() {
     } else { // 新しく入力されたvideoIdのurlだったら
       try {
         const data = await FormPost.fetchDataFromApi(youtubeUrl, videoId, lyric); // 曲情報を取得
-        console.log("data", data);
       } catch (error) {
         console.error("API呼び出し中にエラーが発生しました:", error);
         setLyricFormUrlErrorMessage("データの取得中にエラーが発生しました");

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Box, Button, Typography, TextField, CircularProgress } from '@mui/material';
-import * as FormPost from '../Global/FormPost';
+import * as FormPost from '../Global/FormPost.tsx';
 
 export const Playlist = () => {
   const [youtubePlaylistUrlErrorMessage, setYoutubePlaylistUrlErrorMessage] = useState('');

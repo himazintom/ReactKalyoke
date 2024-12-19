@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ES2020", // 出力するJavaScriptのバージョン
+    "module": "ESNext", // モジュールシステムの指定
+    "lib": ["DOM", "DOM.Iterable", "ESNext"], // 使用するライブラリ
+    "allowJs": true, // JavaScriptファイルのコンパイルを許可
+    "skipLibCheck": true, // 型定義ファイルのチェックをスキップ
+    "esModuleInterop": true, // ESモジュールとの互換性を向上
+    "allowSyntheticDefaultImports": true, // デフォルトエクスポートがないモジュールのデフォルトインポートを許可
+    "strict": true, // 厳密な型チェックを有効化
+    "forceConsistentCasingInFileNames": true, // ファイル名の大文字小文字の一貫性を強制
+    "moduleResolution": "node", // モジュール解決の方法を指定
+    "resolveJsonModule": true, // JSONファイルのインポートを許可
+    "isolatedModules": true, // 各ファイルを個別のモジュールとして扱う
+    "noEmit": true, // 出力ファイルを生成しない
+    "jsx": "react-jsx" // JSXの変換方式を指定（React 17以降の場合）
+  },
+  "include": ["src"], // コンパイル対象のファイルやディレクトリ
+  "exclude": ["node_modules", "dist"] // コンパイルから除外するファイルやディレクトリ
+}

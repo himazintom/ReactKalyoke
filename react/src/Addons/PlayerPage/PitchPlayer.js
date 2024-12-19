@@ -15,7 +15,7 @@ import PianoIcon from '@mui/icons-material/Piano';
 import MicIcon from '@mui/icons-material/Mic';
 import * as Tone from 'tone';
 
-import * as FormPost from '../Global/FormPost';
+import * as FormPost from '../Global/FormPost.tsx';
 
 export const PitchPlayer = () => {
   const hostUrl = process.env.REACT_APP_HOST_URL;
@@ -93,7 +93,6 @@ export const PitchPlayer = () => {
 
   const fetchRecommendData = useCallback(async () => {
     const recommends = await FormPost.fetchRandomMusics(5);
-    console.log("recommends", recommends);
     setRecommendations(recommends);
   },[]);
 
@@ -198,19 +197,16 @@ export const PitchPlayer = () => {
       await Promise.all([
         new Promise((resolve, reject) => {
           instPlayer.load(`${folderpath}/no_vocals.mp3`).then(() => {
-            console.log("Instrumental loaded");
             resolve();
           }).catch(reject);
         }),
         new Promise((resolve, reject) => {
           vocalPlayer.load(`${folderpath}/vocals.mp3`).then(() => {
-            console.log("Vocals loaded");
             resolve();
           }).catch(reject);
         })
       ]);
   
-      console.log("Audio initialization complete");
       setIsMusicsReady(true);
       setIsAudioInitialized(true);
   

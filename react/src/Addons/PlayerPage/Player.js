@@ -15,7 +15,7 @@ import ShuffleIcon from '@mui/icons-material/Shuffle';
 import PianoIcon from '@mui/icons-material/Piano'; // 仮の例
 import MicIcon from '@mui/icons-material/Mic';
 
-import * as FormPost from '../Global/FormPost';
+import * as FormPost from '../Global/FormPost.tsx';
 
 export const Player = () => {
   const hostUrl = process.env.REACT_APP_HOST_URL;
@@ -64,8 +64,9 @@ export const Player = () => {
     const setUrlAndLyricInForm = async () => {
       if(videoData){
         const videoId = videoData.videoId;
+        const lyric = videoData.lyric;
         setYoutubeUrl(`https://www.youtube.com/watch?v=${videoId}`);
-        setLyric(await FormPost.fetchLyricFromDB(videoId));//videoIdをもとに最新の歌詞を入力
+        setLyric(lyric);//videoIdをもとに最新の歌詞を入力
       }
     }
     setUrlAndLyricInForm();
@@ -78,7 +79,6 @@ export const Player = () => {
 
   const fetchRecommendData = useCallback(async () => {
     const recommends = await FormPost.fetchRandomMusics(5);
-    console.log("recommends", recommends);
     setRecommendations(recommends);
   },[]);
 
@@ -244,8 +244,7 @@ export const Player = () => {
       setLyricFormUrlErrorMessage('歌詞は見つかりませんでした: title missing'); // エラーメッセージを設定\
     }
     const searchedLyric = await FormPost.searchLyricFromWeb(title, language);
-    // console.log('searchedLyric',searchedLyric);
-    if(searchedLyric=='Null' || searchedLyric==''){
+    if(searchedLyric==null || searchedLyric==''){
       setLyricFormUrlErrorMessage('歌詞は見つかりませんでした'); // エラーメッセージを設定
     }else{
       setBeforeAutoLyric(lyric);//自動検索前の歌詞を保存
@@ -458,7 +457,6 @@ export const Player = () => {
   //   const [state, setState] = useState(initialValue);
   
   //   const setLoggedState = useCallback((value) => {
-  //     console.log(`ready is ${isKaraokeReady} and ${name} set to:`, value);
   //     setState(value);
   //   }, [name]);
   
@@ -515,7 +513,6 @@ export const Player = () => {
     instGainNode.gain.value = calculateVolume(instVolume);
     instAudio.loop = false;
 
-    // console.log("loop",isLooping, 'shuffle',isShuffling);
     instAudio.addEventListener('ended', handleEndedMusic);
 
     instAudioRef.current = instAudio;
@@ -647,7 +644,6 @@ export const Player = () => {
       // ずれが0.1秒以上あれば修正
       if (timeDifference > 0.1) {
         playerRef.current.seekTo(instAudioRef.current.currentTime);
-        // console.log('Time discrepancy adjusted.');
       }
     }, 1000);  // 1秒後にチェック
   }
@@ -670,12 +666,9 @@ export const Player = () => {
 
   useEffect(() => {
     const handleFocus = () => {
-      // console.log('isKaraokeReady', isKaraokeReady, 'isPlaying', isPlaying);
       setTimeout(() => {
-        // console.log('遅れてisPlayerReady', isKaraokeReady, 'isPlaying', isPlaying);
 
         if (isKaraokeReady && isPlaying) { // 音楽を流していたら
-          // console.log('動画動いた!');
           playerRef.current.seekTo(instAudioRef.current.currentTime); // youtubeAPI(映像)の位置を現在音が再生されているところにする
         }
       }, 500); // 500ms遅延
@@ -683,7 +676,6 @@ export const Player = () => {
   
     const handleBlur = () => {
       // ブラウザタブが非アクティブになったときの処理
-      // console.log('ブラウザタブが非アクティブになりました');
     };
   
     window.addEventListener('focus', handleFocus);
@@ -743,7 +735,6 @@ export const Player = () => {
     } else if (isShuffling) {
   
       const videoData = await FormPost.fetchRandomMusics(1);
-      // console.log("videoData",videoData);
       if (videoData && videoData.length > 0) {
         setIsShufflePlaying(true);
   
@@ -849,21 +840,17 @@ export const Player = () => {
 
   useEffect(() =>{
     setIsKaraokeReady(isPlayerLyricReady && isYoutubeApiReady && isMusicsReady);
-    // console.log('after_L',isPlayerLyricReady, 'Y',isYoutubeApiReady, 'M',isMusicsReady, 'K',isKaraokeReady);
 
   // },[isPlayerLyricReady, isInstWaveFormerReady, isVocalWaveFormerReady, isYoutubeApiReady, isMusicsReady])
   },[isPlayerLyricReady, isYoutubeApiReady, isMusicsReady])
 
   // useEffect(() =>{
-  //   console.log('playerLyricList', playerLyricList);
   // },[playerLyricList])
 
   // useEffect(() =>{
-  //   console.log('prepareKaraokeStatus', prepareKaraokeStatus);
   // },[prepareKaraokeStatus])
 
   // useEffect(() =>{
-  //   console.log('isTimestampLyric', isTimestampLyric);
   // },[isTimestampLyric])
 
   return (
@@ -1226,7 +1213,6 @@ export const Player = () => {
                 }}
               >
                 {playerLyricList.map((line, index) => {
-                  // console.log("01lyric",line.lyric);
                   return (
                     <Typography
                       key={index}

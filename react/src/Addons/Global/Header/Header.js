@@ -11,7 +11,7 @@ import useMediaQuery from '@mui/material/useMediaQuery';
 import { useTheme } from '@mui/material/styles';
 import LanguageIcon from '@mui/icons-material/Language';
 
-import { fetchVideoDataByStr } from '../FormPost.js';
+import { fetchVideoDataByStr } from '../FormPost.tsx';
 import { SearchResultList } from '../../PlayerPage/SearchResults.tsx';
 
 import './Header.css';
@@ -101,12 +101,10 @@ export const Header = () => {
   
   const handleSearch = async () => {
     if (searchQuery.trim() !== '') {
-      console.log('Searching for:', searchQuery);
       
       try {
         // 非同期処理を待機して結果を取得
         const searchResult = await fetchVideoDataByStr(searchQuery);
-        console.log('Result:', searchResult);
   
         // 結果をステートにセット
         setSearchResults(searchResult);
@@ -132,7 +130,6 @@ export const Header = () => {
   };
 
   const handleAccountToggle = () => {
-    console.log("account");
   }
 
   const drawerContent = (

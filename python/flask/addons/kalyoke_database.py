@@ -353,3 +353,50 @@ def get_random_song(requestCount):
     except Exception as e:
         print(f"Error getting random song: {e}")
         return None
+    
+def google_search_api_count():
+    try:
+        # データベース接続
+        conn = connect_to_database()
+        cursor = conn.cursor(dictionary=True)
+
+        # 今日の日付を取得
+        today = datetime.date.today()
+
+        # 使用回数を取得するクエリ
+        query = """
+        SELECT usage_count FROM api_usage_log
+        WHERE date = %s AND endpoint = 'google_api'
+        """
+        cursor.execute(query, (today,))
+        row = cursor.fetchone()
+
+        # 使用回数を加算するクエリ
+        if not row:
+            # レコードが存在しない場合、新しいレコードを挿入
+            insert_query = """
+            INSERT INTO api_usage_log (date, reset_time, endpoint, usage_count)
+            VALUES (%s, '17:00:00', 'google_api', 1)
+            """
+            cursor.execute(insert_query, (today,))
+            usage_count = 1
+        else:
+            # 既存のレコードが存在する場合、使用回数を加算
+            update_query = """
+            UPDATE api_usage_log
+            SET usage_count = usage_count + 1
+            WHERE date = %s AND endpoint = 'google_api'
+            """
+            cursor.execute(update_query, (today,))
+            usage_count = row['usage_count'] + 1
+
+        conn.commit()  # 変更をコミット
+
+        return usage_count
+
+    except Exception as e:
+        print(f"Error getting or updating Google API count: {e}")
+        return None
+
+    finally:
+        close_database_connection(cursor, conn)

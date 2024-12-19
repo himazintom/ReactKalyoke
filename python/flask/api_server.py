@@ -131,14 +131,15 @@ def fetch_title():
     data = request.get_json()
     video_id = data.get("videoId")
     id = kalyoke_db.get_id_from_database("videos", "video_id", video_id)
+    title=""
     if id is not None:  # DBにデータがあったら
-        return kalyoke_db.get_data_from_database("videos", id, "title")
-
+        title = kalyoke_db.get_data_from_database("videos", id, "title")
+    else:
     # DBにデータが無かったら
-    url = "https://www.youtube.com/watch?v=" + video_id
-    title = youtube_dl.get_video_title(url)  # ytdlpを用いてtitle取得
+        url = "https://www.youtube.com/watch?v=" + video_id
+        title = youtube_dl.get_video_title(url)  # ytdlpを用いてtitle取得
     if title:
-        return title
+        return {"title": title}
     return "Null"
 
 
@@ -189,6 +190,14 @@ def fetch_video_data_by_str():  # キーワードをもとにDBからビデオ�
         video["videoId"] = video.pop("video_id")  # video_idをvideoIdに変更
     
     return video_data
+
+@app.route("/api/google_api/custom_search/count", methods=["POST"])
+def google_search_api_counter():
+    count = kalyoke_db.google_search_api_count()
+
+    if count is not None:
+        return jsonify({"count": count})  # JSON形式で返す
+    return jsonify({"error": "Failed to retrieve count"}), 500  # エラーハンドリング
 
 # if __name__ == '__main__':　#uwsgiで動作させるときにはいらない
 #     app.run(host="0.0.0.0", port=5000)
