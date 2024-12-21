@@ -119,7 +119,7 @@ def fetch_lyric():
     video_id = data.get("videoId")
     if kalyoke_db.exists_video_id(video_id):
         return jsonify({"lyric": kalyoke_db.get_video_lyric_from_video_id(video_id)})
-    return ""
+    return jsonify({"lyric": ""})
 
 @app.route("/api/fetch_lyric_update_date", methods=["POST"])
 def fetch_lyric_update_date():

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import WaveSurfer from 'wavesurfer.js';
 
-const Waveform = forwardRef(({ audioUrl, isPlaying, barAlign='', onReady }, ref) => {
+const Waveform = forwardRef(({ audioUrl, isPlaying, barAlign='', onReady, isVisible }, ref) => {
   const waveformRef = useRef(null);
   const wavesurferRef = useRef(null);
   const isFirstRender = useRef(true); // 初回レンダリングを追跡するフラグ
@@ -42,6 +42,7 @@ const Waveform = forwardRef(({ audioUrl, isPlaying, barAlign='', onReady }, ref)
 
       // readyイベントで曲の長さを取得して幅を設定
       wavesurferRef.current.on('ready', () => {
+
         wavesurferRef.current.setVolume(0); // ミュートにする
         const duration = wavesurferRef.current.getDuration();
 
@@ -99,8 +100,8 @@ const Waveform = forwardRef(({ audioUrl, isPlaying, barAlign='', onReady }, ref)
   }));
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden'  }}>
-      <div ref={waveformRef} style={{ position: 'relative', height: '100%', marginLeft: '50%', transform: 'translateX(0%)' }}></div>
+    <div style={{ position: 'relative', width: '100%', height: '100%', overflow: 'hidden' }}>
+      <div ref={waveformRef} style={{ position: 'relative', height: '100%', marginLeft: '50%', transform: 'translateX(0%)', display: isVisible ? 'block' : 'none' }}></div>
     </div>
   );
 });

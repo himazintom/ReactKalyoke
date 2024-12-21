@@ -149,7 +149,7 @@ export const getLyricFromSites = async (urls: string[]): Promise<{ lyric: string
 export const checkVideoExist = async (videoId: string): Promise<boolean> => {
   try {
     const response = await fetchData(`${apiUrl}/api/check_video_exist`, { videoId });
-    return response.exists;
+    return response.exist;
   } catch (error) {
     console.error("Error checking video existence:", error);
     return false;
@@ -193,6 +193,7 @@ export const fetchPlaylistData = async (url: string): Promise<any> => {
 export const fetchLyricFromDB = async (videoId: string): Promise<string | null> => {
   try {
     const response = await fetchData(`${apiUrl}/api/fetch_lyric`, { videoId });
+    console.log("response",response);
     return response.lyric || null;
   } catch (error) {
     console.error("Error fetching lyric from DB:", error);

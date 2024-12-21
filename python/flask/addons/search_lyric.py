@@ -102,7 +102,7 @@ def get_lyric(url):
 
         elif domain == "uta-net.com":
             logger.info(f"Accessing 'uta-net.com' for URL: {url}")
-            if "song" or "movie" in url:
+            if "song" in url or "movie" in url:
                 response = requests.get(url)
                 response.raise_for_status()
                 doc = BeautifulSoup(response.text, "html.parser")
@@ -115,18 +115,18 @@ def get_lyric(url):
                 logger.info(f"gl: {gl}")
 
                 if gl == "None":
-                    kashi_doc = doc.select_one(".row .kashi")
-                    str_doc = str(
-                        kashi_doc.select_one(".row.kashi .col-12.px-2.px-lg-3 div")
-                    )
-                    logger.info(f"gkashi_doc: {kashi_doc}")
-
-                    gl = (
-                        str_doc.replace("<br/>", "\n")
-                        .replace("</div>", "")
-                        .replace("<div>", "")
-                    )
-                    logger.info(f"gl last: {gl}")
+                    kashi_doc = doc.select_one(".row.kashi .col-12.px-0.px-lg-3 div")
+                    if kashi_doc:
+                        str_doc = str(kashi_doc.select_one("div"))
+                        gl = (
+                            str_doc.replace("<br/>", "\n")
+                            .replace("</div>", "")
+                            .replace("<div>", "")
+                        )
+                        logger.info(f"gl last: {gl}")
+                    else:
+                        logger.error(f"kashi_doc が見つかりませんでした。URL: {url}")
+                        return ""
 
 
         elif domain == "utaten.com":

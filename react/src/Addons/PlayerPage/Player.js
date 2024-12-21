@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Box, Slider, Button, Typography, Checkbox, TextField, FormControlLabel, Link } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import YouTube from 'react-youtube';
-// import Waveform from './Waveform';
+import Waveform from './Waveform.jsx';
 import Cookies from 'js-cookie';
 import CircularProgress from '@mui/material/CircularProgress';
 
@@ -12,8 +12,10 @@ import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import LoopIcon from '@mui/icons-material/Loop';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
-import PianoIcon from '@mui/icons-material/Piano'; // 仮の例
+import PianoIcon from '@mui/icons-material/Piano';
 import MicIcon from '@mui/icons-material/Mic';
+import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
+import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 
 import * as FormPost from '../Global/FormPost.tsx';
 import { title } from 'process';
@@ -38,6 +40,7 @@ export const Player = () => {
   
   const setLyricByCookie = async(videoId) => {
     const lyric = await FormPost.fetchLyricFromDB(videoId);
+    console.log("lyric",lyric);
     setLyric(lyric);
   }
 
@@ -66,13 +69,13 @@ export const Player = () => {
     const setUrlAndLyricInForm = async () => {
       if(videoData){
         const videoId = videoData.videoId;
-        // const lyric = videoData.lyric;
         setYoutubeUrl(`https://www.youtube.com/watch?v=${videoId}`);
         const searchedLyric = await autoSearchLyric(videoId);
         if (searchedLyric){//もしすでに歌詞があったり期間内に検索されていたら歌詞の検索ボタンを表示しない
           setIsAutoSearchLyricArea(false);
+          setLyric(searchedLyric);
         }else{
-          setIsAutoSearchLyricArea(false);
+          setIsAutoSearchLyricArea(true);
         }
       }
     }
@@ -98,8 +101,8 @@ export const Player = () => {
   }, [fetchRecommendData]);
   
   const resetForms = () => {
-    setYoutubeUrl('');
-    setLyric('');
+    setYoutubeUrl("");
+    setLyric("");
   }
   const extractVideoId = (youtubeUrl) => {
     const regex = /^(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})(?:\S+)?$/;
@@ -108,7 +111,8 @@ export const Player = () => {
   }
 
   const autoSearchLyric = async(videoId, language="en") => {//自動で歌詞を検索する必要だあるかを判断し必要だったら検索して歌詞の文字列を返す
-    if (await FormPost.checkVideoExist(videoId)){
+    const existCheck = await FormPost.checkVideoExist(videoId);
+    if (existCheck){
       const lyric = await FormPost.fetchLyricFromDB(videoId);
 
       if (lyric != "" && lyric != null) {//もしDBに歌詞があったら...
@@ -148,8 +152,11 @@ export const Player = () => {
         }
       }
     }else{//DBに音源が無かったら
+
       const title = await FormPost.getTitleByVideoId(videoId);
       const searchLyric = await FormPost.searchLyricFromWeb(title, language);
+      console.log("DBないねぇ",searchLyric);
+
       setIsAutoSearchLyricArea(true);
       if(searchLyric != "" && searchLyric != null){
         return searchLyric;
@@ -492,11 +499,24 @@ export const Player = () => {
   const [vocalAudioUrl, setVocalAudioUrl] = useState('');
   const [instAudioUrl, setInstAudioUrl] = useState('');
   const [isTimestampLyric, setIsTimestampLyric] = useState(false);
+  const [isLyricCC, setIsLyricCC] = useState(true);
+  const [isVisibleWaveform, setIsVisibleWaveform] = useState(true);
   const [isLooping, setIsLooping] = useState(false);
   const [isShuffling, setIsShuffling] = useState(false);
   const [isShufflePlaying, setIsShufflePlaying] = useState(false)
   useEffect(() => {
-    
+    const lyricCCValue = Cookies.get('lyricCC');
+    const isLyricCC = lyricCCValue === 'true'; // 文字列をBooleanに変換
+    if (isLyricCC) {
+      setIsLyricCC(isLyricCC);
+    }
+
+    const visibleWaveformValue = Cookies.get('visibleWaveform');
+    const isVisibleWaveform = visibleWaveformValue === 'true'; // 文字列をBooleanに変換
+    if (isVisibleWaveform) {
+      setIsVisibleWaveform(isVisibleWaveform);
+    }
+
     const loopValue = Cookies.get('loop');
     const isLooping = loopValue === 'true'; // 文字列をBooleanに変換
     if (isLooping) {
@@ -816,8 +836,6 @@ export const Player = () => {
       instAudioRef.current.removeEventListener('ended', handleEndedMusic);
       instAudioRef.current.addEventListener('ended', handleEndedMusic);
     }
-    Cookies.set('loop', isLooping, { path: '/', expires: 31 });
-    Cookies.set('shuffle', isShuffling, { path: '/', expires: 31 });
 
     // クリーンアップでイベントリスナーを削除
     return () => {
@@ -856,7 +874,29 @@ export const Player = () => {
     
   }, [isKaraokeReady]); // isKaraokeReadyが変化したときに実行される
 
+  const handleVocalReady = useCallback(() => {
+    console.log("ボーカルの波形が準備完了しました");
+    setIsVocalWaveFormerReady(true);
+  }, []);
+
+  const handleInstReady = useCallback(() => {
+    console.log("インストルメンタルの波形が準備完了しました");
+    setIsInstWaveFormerReady(true);
+  }, []);
+
+  const toggleLyricCC = () => {//ループ機能のみオンにする
+    Cookies.set('lyricCC', !isLyricCC, { path: '/', expires: 31 });
+    setIsLyricCC(!isLyricCC);
+  };
+
+  const toggleWaveform = () => {
+    Cookies.set('visibleWaveform', !isVisibleWaveform, { path: '/', expires: 31 });
+    setIsVisibleWaveform(!isVisibleWaveform);
+  }
+
   const toggleLoop = () => {//ループ機能のみオンにする
+    Cookies.set('loop', !isLooping, { path: '/', expires: 31 });
+    Cookies.set('shuffle', false, { path: '/', expires: 31 });
     setIsLooping(!isLooping);
     if(isShuffling){
       setIsShuffling(false);
@@ -864,6 +904,8 @@ export const Player = () => {
   };
 
   const toggleShuffle = () => {//シャッフル機能のみオンにする
+    Cookies.set('loop', false, { path: '/', expires: 31 });
+    Cookies.set('shuffle', !isShuffling, { path: '/', expires: 31 });
     setIsShuffling(!isShuffling);
     if(isLooping){
       setIsLooping(false);
@@ -1241,75 +1283,79 @@ export const Player = () => {
                 '&::-webkit-scrollbar': { display: 'none' },
               }}
             >
-              {/* タイムスタンプ有りの歌詞表示 */}
-              <Box sx={{ display: isTimestampLyric ? 'block' : 'none' }}>
-                {playerLyricList.map((line, index) => (
-                  <Typography
-                    key={index}
-                    ref={(el) => (lyricLineRef.current[index] = el)}  // 各行に ref を追加
+              {isLyricCC && (
+                <>
+                  {/* タイムスタンプ有りの歌詞表示 */}
+                  <Box sx={{ display: isTimestampLyric ? 'block' : 'none' }}>
+                    {playerLyricList.map((line, index) => (
+                      <Typography
+                        key={index}
+                        ref={(el) => (lyricLineRef.current[index] = el)}  // 各行に ref を追加
+                        sx={{
+                          minHeight: {
+                            xs: '30px',
+                            sm: '40px',
+                            md: '50px',
+                          },
+                          color: 'white',
+                          fontSize: {
+                            xs: '16px',
+                            sm: '22px',
+                            md: '28px',
+                          },
+                          opacity: index === currentLyricIndex ? 1 : 0.6, // 中央の行は不透明
+                          textAlign: 'center',
+                          textShadow: `
+                            2px 2px 4px rgba(0, 0, 0, 1.0),
+                            -2px 2px 4px rgba(0, 0, 0, 1.0),
+                            2px -2px 4px rgba(0, 0, 0, 1.0),
+                            -2px -2px 4px rgba(0, 0, 0, 1.0)
+                          `,
+                          transition: 'opacity 0.5s ease',
+                        }}
+                      >
+                        {line.lyric || ''} {/* 空白の行を処理 */}
+                      </Typography>
+                    ))}
+                  </Box>
+                  {/* タイムスタンプがない場合の歌詞表示 */}
+                  <Box
                     sx={{
-                      minHeight: {
-                        xs: '30px',
-                        sm: '40px',
-                        md: '50px',
-                      },
-                      color: 'white',
-                      fontSize: {
-                        xs: '16px',
-                        sm: '22px',
-                        md: '28px',
-                      },
-                      opacity: index === currentLyricIndex ? 1 : 0.6, // 中央の行は不透明
-                      textAlign: 'center',
-                      textShadow: `
-                        2px 2px 4px rgba(0, 0, 0, 1.0),
-                        -2px 2px 4px rgba(0, 0, 0, 1.0),
-                        2px -2px 4px rgba(0, 0, 0, 1.0),
-                        -2px -2px 4px rgba(0, 0, 0, 1.0)
-                      `,
-                      transition: 'opacity 0.5s ease',
+                      display: isTimestampLyric ? 'none' : 'block', // タイムスタンプがない場合に表示
                     }}
                   >
-                    {line.lyric || ''} {/* 空白の行を処理 */}
-                  </Typography>
-                ))}
-              </Box>
-              {/* タイムスタンプがない場合の歌詞表示 */}
-              <Box
-                sx={{
-                  display: isTimestampLyric ? 'none' : 'block', // タイムスタンプがない場合に表示
-                }}
-              >
-                {playerLyricList.map((line, index) => {
-                  return (
-                    <Typography
-                      key={index}
-                      sx={{
-                        minHeight: {
-                          xs: '30px',
-                          sm: '40px',
-                          md: '50px',
-                        },
-                        color: 'white',
-                        fontSize: {
-                          xs: '16px',
-                          sm: '22px',
-                          md: '28px',
-                        },
-                        textAlign: 'center',
-                        textShadow: `
-                          2px 2px 4px rgba(0, 0, 0, 1.0),
-                          -2px 2px 4px rgba(0, 0, 0, 1.0),
-                          2px -2px 4px rgba(0, 0, 0, 1.0),
-                          -2px -2px 4px rgba(0, 0, 0, 1.0)
-                        `,
-                      }}
-                    >
-                      {line.lyric || ''} {/* 空の文字列の場合にもスペースを表示 */}
-                    </Typography>
-                  );
-                })}
-              </Box>
+                    {playerLyricList.map((line, index) => {
+                      return (
+                        <Typography
+                          key={index}
+                          sx={{
+                            minHeight: {
+                              xs: '30px',
+                              sm: '40px',
+                              md: '50px',
+                            },
+                            color: 'white',
+                            fontSize: {
+                              xs: '16px',
+                              sm: '22px',
+                              md: '28px',
+                            },
+                            textAlign: 'center',
+                            textShadow: `
+                              2px 2px 4px rgba(0, 0, 0, 1.0),
+                              -2px 2px 4px rgba(0, 0, 0, 1.0),
+                              2px -2px 4px rgba(0, 0, 0, 1.0),
+                              -2px -2px 4px rgba(0, 0, 0, 1.0)
+                            `,
+                          }}
+                        >
+                          {line.lyric || ''} {/* 空の文字列の場合にもスペースを表示 */}
+                        </Typography>
+                      );
+                    })}
+                  </Box>
+                </>
+              )}
             </Box>
           </Box>
         )}
@@ -1347,7 +1393,7 @@ export const Player = () => {
               }}
             >
               <Box sx={{ display: 'flex', justifyContent: 'center', marginBottom: '8px' }}>
-                <PianoIcon sx={{ color: 'white' }} /> {/* 🎹の代わりにアイコンを使用 */}
+                <PianoIcon sx={{ color: 'white' }} />
               </Box>
               <Slider
                 value={instVolume}
@@ -1408,6 +1454,32 @@ export const Player = () => {
               }}
             >
               {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
+            </Button>
+
+            {/* 歌詞の表示・非表示切り替えボタン */}
+            <Button
+              onClick={toggleLyricCC}
+              sx={{
+                position: 'absolute',
+                bottom: '50px',
+                left: '50px',
+                color: isLyricCC ? 'skyBlue' : 'white',
+              }}
+            >
+              <ClosedCaptionIcon />
+            </Button>
+
+            {/* 波形の表示・非表示切り替えボタン */}
+            <Button
+              onClick={toggleWaveform}
+              sx={{
+                position: 'absolute',
+                bottom: '50px',
+                left: '90px',
+                color: isVisibleWaveform ? 'skyBlue' : 'white',
+              }}
+            >
+              <GraphicEqIcon />
             </Button>
 
             {/* シークバー */}
@@ -1479,37 +1551,43 @@ export const Player = () => {
             zIndex: 1,
           }}
         >
-        {isOnceKaraokeReady && !isKaraokeReady && (
-          <Box
-            sx={{
-              position: 'absolute', // absoluteのままにする
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%', // 親要素の高さに基づいて高さを設定
-              backgroundColor: 'rgba(0, 0, 0, 0.0)',
-              zIndex: 1,
-            }}
-          />
-        )}
-          {/* <Box sx={{ position: 'absolute', width: '100%', height: '15%', top: '0' }}>
+          {isOnceKaraokeReady && !isKaraokeReady && (
+            <Box
+              sx={{
+                position: 'absolute', // absoluteのままにする
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%', // 親要素の高さに基づいて高さを設定
+                backgroundColor: 'rgba(0, 0, 0, 0.0)',
+                zIndex: 1,
+              }}
+            />
+          )}
+          <Box sx={{ position: 'absolute', width: '100%', height: '15%', top: '0' }}>
             <Waveform 
               ref={vocalWaveformRef} 
               audioUrl={vocalAudioUrl} 
               isPlaying={isPlaying} 
               barAlign='top' 
-              onReady={() => setIsVocalWaveFormerReady(true)} 
+              onReady={() => {
+                  handleVocalReady();
+              }} 
+              isVisible={isVisibleWaveform && isVocalWaveFormerReady}
             />
           </Box>
           <Box sx={{ position: 'absolute', width: '100%', height: '15%', top: '85%', backgroundColor: 'rgba(255,0,0,0)' }}>
             <Waveform 
               ref={instWaveformRef} 
               audioUrl={instAudioUrl} 
-              isPlaying={isPlaying} 
+              isPlaying={isPlaying}
               barAlign='bottom'
-              onReady={() => setIsInstWaveFormerReady(true)} 
+              onReady={() => {
+                handleInstReady();
+              }} 
+              isVisible={isVisibleWaveform && isInstWaveFormerReady}
             />
-          </Box> */}
+          </Box>
         </Box>
       </Box>
     </Box>
