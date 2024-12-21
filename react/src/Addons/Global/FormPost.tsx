@@ -4,9 +4,8 @@ import axios from "axios";
 const apiUrl = process.env.REACT_APP_API_URL || "";
 const googleAPIKey = process.env.REACT_APP_GOOGLE_API_KEY || "";
 const searchEngineID = process.env.REACT_APP_SEARCH_ENGINE_ID || "";
-const braveAPIKey = process.env.REACT_APP_BRAVE_API_KEY || "";
 
-if (!apiUrl || !googleAPIKey || !searchEngineID || !braveAPIKey) {
+if (!apiUrl || !googleAPIKey || !searchEngineID) {
   throw new Error("必要な環境変数が設定されていません。");
 }
 
@@ -69,18 +68,7 @@ const searchApiConfig = {
       q: `${title} ${languages[language]}`,
       num: 5,
     }),
-  },
-  brave: {
-    url: "https://api.search.brave.com/res/v1/web/search",
-    headers: {
-      "x-subscription-token": braveAPIKey,
-    },
-    params: (title: string, language: string) => ({
-      q: `${title} ${languages[language]}`,
-      count: 5,
-      result_filter: "web",
-    }),
-  },
+  }
 };
 
 const buildUrlWithParams = (url: string, params: Record<string, any>) => {
@@ -97,14 +85,28 @@ const fetchSearchData = async (url: string, params: Record<string, any>, headers
   return response.json();
 };
 
+const fetchBraveSearchData = async (title: string, language: string) => {
+  try {
+    const response = await fetchData(`${apiUrl}/api/search_lyric_sites_by_brave`, { title,  language});
+    return response;
+  } catch (error) {
+    console.error("Error fetching lyric from sites:", error);
+    return null;
+  }
+};
+
 const searchFromAPI = async (api: "google" | "brave", title: string, language: string): Promise<string[]> => {
   try {
-    const { url, headers, params } = searchApiConfig[api];
-    const data = await fetchSearchData(url, params(title, language), headers);
-
-    return api === "google"
-      ? data.items?.map((item: any) => item.formattedUrl) || []
-      : data.web?.results?.map((item: any) => item.url) || [];
+    if (api === "google"){
+      const { url, headers, params } = searchApiConfig[api];
+      const data = await fetchSearchData(url, params(title, language), headers);
+      // console.log("data01", data);
+      return data.items?.map((item: any) => item.formattedUrl) || []
+    }else{
+      const data = await fetchBraveSearchData(title, language);
+      // console.log("data02", data);
+      return data || [];
+    }
   } catch (error) {
     console.error(`Error fetching data from ${api} API:`, error);
     return [];
@@ -114,7 +116,7 @@ const searchFromAPI = async (api: "google" | "brave", title: string, language: s
 // 歌詞検索メイン関数
 export const searchLyricFromWeb = async (title: string, language: string): Promise<string | null> => {
   try {
-    const apiCount = 100//await googleSearchApiCount();
+    const apiCount = await googleSearchApiCount();
     console.log("apiCount", apiCount);
     const api = apiCount < 100 ? "google" : "brave";
     const urls = await searchFromAPI(api, title, language);
@@ -275,9 +277,9 @@ export const fetchRandomMusics = async (
 };
 
 // 動画IDからタイトルを取得
-export const fetchTitleByVideoId = async (videoId: string): Promise<string | null> => {
+export const getTitleByVideoId = async (videoId: string): Promise<string | null> => {
   try {
-    const response = await fetchData(`${apiUrl}/api/fetch_title`, { videoId });
+    const response = await fetchData(`${apiUrl}/api/get_title`, { videoId });
     return response.title || null;
   } catch (error) {
     console.error("Error fetching title by video ID:", error);

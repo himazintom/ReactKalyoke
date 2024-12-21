@@ -4,6 +4,7 @@ import addons.database as kalyoke_db
 import addons.demucs as demucs
 import addons.youtube_dl as youtube_dl
 import addons.search_lyric as search_lyric
+import addons.brave_search as brave_search
 
 import datetime
 from re import match
@@ -143,8 +144,8 @@ def update_lyric_update_date():
     else:  # 曲が存在する場合、歌詞を更新する
         return jsonify({"error": "Video not found"}), 404
 
-@app.route("/api/fetch_title", methods=["POST"])
-def fetch_title():
+@app.route("/api/get_title", methods=["POST"])
+def get_title():
     data = request.get_json()
     video_id = data.get("videoId")
     title=""
@@ -171,6 +172,12 @@ def fetch_random_music(requestCount):
     random_music_data = kalyoke_db.get_random_song(requestCount=requestCount)
     return random_music_data
 
+@app.route("/api/search_lyric_sites_by_brave", methods=["POST"])
+def search_lyric_sites_by_brave():
+    data = request.get_json()
+    title = data.get("title")
+    language = data.get("language")
+    return brave_search.get_lyric_sites(title, language)
 
 @app.route("/api/get_lyric_from_sites", methods=["POST"])
 def get_lyric_from_sites():

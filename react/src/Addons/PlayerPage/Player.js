@@ -16,6 +16,7 @@ import PianoIcon from '@mui/icons-material/Piano'; // 仮の例
 import MicIcon from '@mui/icons-material/Mic';
 
 import * as FormPost from '../Global/FormPost.tsx';
+import { title } from 'process';
 
 export const Player = () => {
   const hostUrl = process.env.REACT_APP_HOST_URL;
@@ -137,7 +138,7 @@ export const Player = () => {
         if (diffDays > lyricUpdateIntervalDay) {//もし最後に歌詞検索をしてからlyricUpdateIntervalDay日経っていたら...歌詞を自動で検索する
           console.log("二っすうたってた");
           
-          const title = FormPost.fetchTitleByVideoId(videoId);
+          const title = await FormPost.getTitleByVideoId(videoId);
           const searchLyric = await FormPost.searchLyricFromWeb(title, language);
 
           if(searchLyric != "" && searchLyric != null){
@@ -146,6 +147,13 @@ export const Player = () => {
           }
         }
       }
+    }else{//DBに音源が無かったら
+      const title = await FormPost.getTitleByVideoId(videoId);
+      const searchLyric = await FormPost.searchLyricFromWeb(title, language);
+      setIsAutoSearchLyricArea(true);
+      if(searchLyric != "" && searchLyric != null){
+        return searchLyric;
+      }
     }
     //もし最後に歌詞検索をしてからlyricUpdateIntervalDay日経っていなかったら
     return "";
@@ -153,10 +161,11 @@ export const Player = () => {
 
   const processUrl = async (url) => {
     let videoId = extractVideoId(url);
-  
+    setLyric("");
     if (videoId) {
       if (videoId !== beforeYoutubeUrlFormVideoId) { // 新しい videoId の場合
         setBeforeYoutubeUrlFormVideoId(videoId);
+
         const searchedLyric = await autoSearchLyric(videoId);
         if (searchedLyric){//もしすでに歌詞があったり期間内に検索されていたら歌詞の検索ボタンを表示しない
           setIsAutoSearchLyricArea(false);

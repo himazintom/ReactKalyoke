@@ -421,7 +421,7 @@ export const PitchPlayer = () => {
     setIsAutoSearchLyric(true);
     
     const language = isOverseas ? 'en' : 'ja';
-    const title = await FormPost.fetchTitleByVideoId(videoId);
+    const title = await FormPost.getTitleByVideoId(videoId);
     if(title === 'Null') {
       setLyricFormUrlErrorMessage('歌詞は見つかりませんでした: title missing');
     }
