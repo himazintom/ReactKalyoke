@@ -114,7 +114,8 @@ const searchFromAPI = async (api: "google" | "brave", title: string, language: s
 // 歌詞検索メイン関数
 export const searchLyricFromWeb = async (title: string, language: string): Promise<string | null> => {
   try {
-    const apiCount = await googleSearchApiCount();
+    const apiCount = 100//await googleSearchApiCount();
+    console.log("apiCount", apiCount);
     const api = apiCount < 100 ? "google" : "brave";
     const urls = await searchFromAPI(api, title, language);
 
@@ -194,6 +195,34 @@ export const fetchLyricFromDB = async (videoId: string): Promise<string | null> 
   } catch (error) {
     console.error("Error fetching lyric from DB:", error);
     return null;
+  }
+};
+
+export const fetchLyricUpdateDateFromDB = async (videoId: string): Promise<string | null> => {
+  try {
+    const response = await fetchData(`${apiUrl}/api/fetch_lyric_update_date`, { videoId });
+    console.log("date", response);
+
+    if (response && typeof response.lyricUpdateDate === "string") {
+      return response.lyricUpdateDate;
+    } else if (response.lyricUpdateDate == null) {//DBに記録が無かったら「2024-01-01 00:00:00」を返す
+      return "2024-01-01 00:00:00";
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Error fetching lyricUpdateDate:", error);
+    return null;
+  }
+};
+
+
+export const updateLyricUpdateDate = async (videoId: string) => {
+  try {
+    const response = await fetchData(`${apiUrl}/api/update_lyric_update_date`, { videoId });
+    return response.success || false;
+  } catch (error) {
+    console.error("Error fetching lyric from DB:", error);
   }
 };
 

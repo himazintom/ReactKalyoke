@@ -27,12 +27,14 @@ services:
       context: ./python
       dockerfile: Dockerfile
     container_name: react-kalyoke-flask
+    shm_size: '4g'  # 共有メモリサイズを4GBに拡大
     environment:
       DB_HOST: db
       DB_PORT: 3306
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
+      GENIUS_TOKEN: ${GENIUS_TOKEN}
     volumes:
       - socket:/socket  # uwsgi.sockを共有するためのボリューム
       - ./volumes/musics:/musics  # 共有ボリューム
@@ -60,6 +62,7 @@ services:
         REACT_APP_GOOGLE_API_KEY: ${GOOGLE_API_KEY}
         REACT_APP_SEARCH_ENGINE_ID: ${SEARCH_ENGINE_ID}
         REACT_APP_BRAVE_API_KEY: ${BRAVE_API_KEY}
+        REACT_APP_LYRIC_UPDATE_INTERVAL_DAY: ${LYRIC_UPDATE_INTERVAL_DAY}
 
     container_name: react-kalyoke-web
     environment:
@@ -68,6 +71,7 @@ services:
       REACT_APP_GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       REACT_APP_SEARCH_ENGINE_ID: ${SEARCH_ENGINE_ID}
       REACT_APP_BRAVE_API_KEY: ${BRAVE_API_KEY}
+      REACT_APP_LYRIC_UPDATE_INTERVAL_DAY: ${LYRIC_UPDATE_INTERVAL_DAY}
     ports:
       - '80:80'
       - '443:443'

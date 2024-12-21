@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request
 
-import addons.kalyoke_database as kalyoke_db
+import addons.database as kalyoke_db
 import addons.demucs as demucs
 import addons.youtube_dl as youtube_dl
 import addons.search_lyric as search_lyric
@@ -26,9 +26,7 @@ def remove_list_in_url(url):
 def check_video_exist():
     data = request.get_json()
     video_id = data.get("videoId")
-    id = kalyoke_db.get_id_from_database("videos", "video_id", video_id)
-    check = True if id else False
-    return jsonify({"exist": check})
+    return jsonify({"exist": kalyoke_db.exists_video_id(video_id)})
 
 
 @app.route("/api/separate_music", methods=["POST"])
@@ -43,8 +41,7 @@ def separate_music():
         url_non_list = remove_list_in_url(url)
         path = ""
         
-        id = kalyoke_db.get_id_from_database("videos", "video_id", video_id)
-        if id is None:  # 曲がデータベースに存在しない場合
+        if not kalyoke_db.exists_video_id(video_id):  # 曲がデータベースに存在しない場合
             temp_movie_data = demucs.make_kalyoke(url_non_list, output_dir)
 
             if temp_movie_data is None:
@@ -55,6 +52,7 @@ def separate_music():
                 "title": temp_movie_data.get("title"),
                 "site": temp_movie_data.get("extractor"),
                 "lyric": lyric,
+                "lyric_update_date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "folder_path": temp_movie_data.get("folder_path"),
                 "register_date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "update_date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -67,8 +65,9 @@ def separate_music():
 
         else:  # 曲がデータベースに存在する場合、歌詞を更新する
             kalyoke_db.update_videos_database(video_id, lyric)
-            path = kalyoke_db.get_data_from_database("videos", id, "folder_path")
-            video_title = kalyoke_db.get_data_from_database("videos", id, "title")
+            kalyoke_db.update_video_lyric_update_date_from_video_id(video_id)
+            path = kalyoke_db.get_video_folder_path_from_video_id(video_id)
+            video_title = kalyoke_db.get_video_title_from_video_id(video_id)
 
         history_data = kalyoke_db.get_latest_video_ids()
         data = {"path": path, "history": history_data, "title": video_title}
@@ -85,13 +84,11 @@ def update_lyric():
     data = request.get_json()
     video_id = data.get("videoId")
     lyric = data.get("lyric")
-    id = kalyoke_db.get_id_from_database("videos", "video_id", video_id)
-    if id is None:  # もし入力された曲がデータベースに無い場合
-        return jsonify({"error": "Video not found"}), 404
-    else:  # 曲が存在する場合、歌詞を更新する
+    if kalyoke_db.exists_video_id(video_id):  # もし入力された曲がデータベースに無い場合
         kalyoke_db.update_videos_database(video_id, lyric)
         return jsonify({"status": "success"}), 200
-
+    else:  # 曲が存在する場合、歌詞を更新する
+        return jsonify({"error": "Video not found"}), 404
 
 @app.route("/api/search_video_id/<video_id>")
 def search_video_id(video_id):
@@ -108,9 +105,8 @@ def search_video_id(video_id):
     }
 
     print("data", data)
-    id = kalyoke_db.get_id_from_database("videos", "video_id", video_id)
-    if id:  # データベースにそのvideoIDが存在したら歌詞を返す
-        lyric = kalyoke_db.get_data_from_database("videos", id, "lyric")
+    if kalyoke_db.exists_video_id(video_id):  # データベースにそのvideoIDが存在したら歌詞を返す
+        lyric = kalyoke_db.get_video_lyric_from_video_id(video_id)
         data["lyric"] = lyric
 
     return jsonify(data)
@@ -120,26 +116,46 @@ def search_video_id(video_id):
 def fetch_lyric():
     data = request.get_json()
     video_id = data.get("videoId")
-    id = kalyoke_db.get_id_from_database("videos", "video_id", video_id)
-    if id is not None:
-        return kalyoke_db.get_data_from_database("videos", id, "lyric")
-    return "Null"
+    if kalyoke_db.exists_video_id(video_id):
+        return jsonify({"lyric": kalyoke_db.get_video_lyric_from_video_id(video_id)})
+    return ""
 
+@app.route("/api/fetch_lyric_update_date", methods=["POST"])
+def fetch_lyric_update_date():
+    data = request.get_json()
+    video_id = data.get("videoId")
+    if kalyoke_db.exists_video_id(video_id):
+        lyric_update_date = kalyoke_db.get_video_lyric_update_date_from_video_id(video_id)
+        return jsonify({"lyricUpdateDate": lyric_update_date})
+    else:
+        # DBに存在しなければ現在日時を返す
+        now = datetime.now().isoformat()
+        return jsonify({"lyricUpdateDate": now})
+    
+@app.route("/api/update_lyric_update_date", methods=["POST"])
+def update_lyric_update_date():
+    data = request.get_json()
+    video_id = data.get("videoId")
+
+    if kalyoke_db.exists_video_id(video_id):
+        kalyoke_db.update_video_lyric_update_date_from_video_id(video_id)
+        return jsonify({"status": "success"}), 200
+    else:  # 曲が存在する場合、歌詞を更新する
+        return jsonify({"error": "Video not found"}), 404
 
 @app.route("/api/fetch_title", methods=["POST"])
 def fetch_title():
     data = request.get_json()
     video_id = data.get("videoId")
-    id = kalyoke_db.get_id_from_database("videos", "video_id", video_id)
     title=""
-    if id is not None:  # DBにデータがあったら
-        title = kalyoke_db.get_data_from_database("videos", id, "title")
+    if kalyoke_db.exists_video_id(video_id):  # DBにデータがあったら
+        title = kalyoke_db.get_video_title_from_video_id(video_id)
     else:
     # DBにデータが無かったら
         url = "https://www.youtube.com/watch?v=" + video_id
         title = youtube_dl.get_video_title(url)  # ytdlpを用いてtitle取得
     if title:
-        return {"title": title}
+        return jsonify({"title": title})
     return "Null"
 
 

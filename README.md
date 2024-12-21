@@ -84,6 +84,7 @@ CREATE TABLE videos (
     video_id VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
     lyric TEXT NULL,
+    lyric_update_date DATETIME NOT NULL,
     folder_path VARCHAR(400) NOT NULL,
     register_date DATETIME NOT NULL,
     update_date DATETIME NOT NULL,

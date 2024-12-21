@@ -3,13 +3,14 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from lyricsgenius import Genius
+import os
 
 # ログ設定
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-token = "gFwbpRJA68wzOnW3qJV3v9wPGhlOYSLS_wSHSNscAfNbPjkXF7ztq6qImyiI3c93"
-genius = Genius(token)
+genius_token = os.getenv("GENIUS_TOKEN")
+genius = Genius(genius_token)
 
 
 def sort_urls_by_domain_priority(urls):

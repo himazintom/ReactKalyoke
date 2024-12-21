@@ -19,6 +19,7 @@ import * as FormPost from '../Global/FormPost.tsx';
 
 export const Player = () => {
   const hostUrl = process.env.REACT_APP_HOST_URL;
+  const lyricUpdateIntervalDay = process.env.REACT_APP_LYRIC_UPDATE_INTERVAL_DAY;
 
   const [yourHistory, setYourHistory] = useState([]);
   useEffect(() => {
@@ -47,6 +48,7 @@ export const Player = () => {
 
   const [lyric, setLyric] = useState('');
   const [beforeAutoLyric, setBeforeAutoLyric] = useState(null);
+  const [isAutoSearchLyricArea, setIsAutoSearchLyricArea] = useState(false)
   const [isAutoSearchLyric, setIsAutoSearchLyric] = useState(false)
   const [isOverseas, setIsOverseas] = useState(false);
   const [youtubeUrlErrorMessage, setYoutubeUrlErrorMessage] = useState(''); // エラーメッセージ用の状態
@@ -55,18 +57,22 @@ export const Player = () => {
   const [isChangeLyricForm, setIsChangeLyricForm]= useState(true);
   const [prepareKaraokeStatus, setPrepareKaraokeStatus] = useState(0);
 
-  const location = useLocation();
-  const videoData = location.state?.videoData;
-
   const [beforeVideoId, setBeforeVideoId] = useState('');
 
+  const location = useLocation();
+  const videoData = location.state?.videoData;
   useEffect(() => {//searchIdでページ推移されたときにformを記入済みにしておく
     const setUrlAndLyricInForm = async () => {
       if(videoData){
         const videoId = videoData.videoId;
-        const lyric = videoData.lyric;
+        // const lyric = videoData.lyric;
         setYoutubeUrl(`https://www.youtube.com/watch?v=${videoId}`);
-        setLyric(lyric);//videoIdをもとに最新の歌詞を入力
+        const searchedLyric = await autoSearchLyric(videoId);
+        if (searchedLyric){//もしすでに歌詞があったり期間内に検索されていたら歌詞の検索ボタンを表示しない
+          setIsAutoSearchLyricArea(false);
+        }else{
+          setIsAutoSearchLyricArea(false);
+        }
       }
     }
     setUrlAndLyricInForm();
@@ -100,27 +106,86 @@ export const Player = () => {
     return match ? match[1] : null;
   }
 
-  const handleUrlChange = async (event) => {
-    const url = event.target.value;
-    setYoutubeUrl(url);
-  
-    let videoId = extractVideoId(url);
-    if (videoId) {
-      if(videoId!=beforeYoutubeUrlFormVideoId){//今までと違うvideoIdが入力されたら
-        setBeforeYoutubeUrlFormVideoId(videoId);
-        setLyric('');
-        try {
-          const lyric = await FormPost.fetchLyricFromDB(videoId);
-          if(lyric!='Null'){
-            setLyric(lyric);
-          }
-        } catch (error) {
-          console.error('Error fetching lyric:', error);
+  const autoSearchLyric = async(videoId, language="en") => {//自動で歌詞を検索する必要だあるかを判断し必要だったら検索して歌詞の文字列を返す
+    if (await FormPost.checkVideoExist(videoId)){
+      const lyric = await FormPost.fetchLyricFromDB(videoId);
+
+      if (lyric != "" && lyric != null) {//もしDBに歌詞があったら...
+        return lyric;
+      }else{//もしDBに歌詞が無かったら...
+        console.log("db空白じゃ!");
+        const nowDate = new Date();
+
+        // 非同期関数でDBから歌詞の検索日時を取得する
+        let lyricUpdateDateDB = await FormPost.fetchLyricUpdateDateFromDB(videoId);
+
+        // lyricUpdateDateDBがnullまたは空文字の場合、現在日時で補完
+        if (!lyricUpdateDateDB) {
+          lyricUpdateDateDB = nowDate.toISOString();
         }
-        setIsChangeLyricForm(true);
+        let lyricUpdateDate = new Date(lyricUpdateDateDB);
+      
+        // 不正な日付だった場合、現在日時で補完
+        if (isNaN(lyricUpdateDate.getTime())) {
+          lyricUpdateDate = nowDate;
+        }
+      
+        const diffTime = nowDate.getTime() - lyricUpdateDate.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // 整数に四捨五入
+        console.log("diffDays", diffDays);
+      
+        if (diffDays > lyricUpdateIntervalDay) {//もし最後に歌詞検索をしてからlyricUpdateIntervalDay日経っていたら...歌詞を自動で検索する
+          console.log("二っすうたってた");
+          
+          const title = FormPost.fetchTitleByVideoId(videoId);
+          const searchLyric = await FormPost.searchLyricFromWeb(title, language);
+
+          if(searchLyric != "" && searchLyric != null){
+            FormPost.updateLyricUpdateDate(videoId);
+            return searchLyric;
+          }
+        }
+      }
+    }
+    //もし最後に歌詞検索をしてからlyricUpdateIntervalDay日経っていなかったら
+    return "";
+  };
+
+  const processUrl = async (url) => {
+    let videoId = extractVideoId(url);
+  
+    if (videoId) {
+      if (videoId !== beforeYoutubeUrlFormVideoId) { // 新しい videoId の場合
+        setBeforeYoutubeUrlFormVideoId(videoId);
+        const searchedLyric = await autoSearchLyric(videoId);
+        if (searchedLyric){//もしすでに歌詞があったり期間内に検索されていたら歌詞の検索ボタンを表示しない
+          setIsAutoSearchLyricArea(false);
+        }else{
+          setIsAutoSearchLyricArea(true);
+        }
+        setLyric(searchedLyric);
       }
     }
   };
+  
+  const handleUrlChange = (event) => {
+    const url = event.target.value;
+    setYoutubeUrl(url);
+  };
+  
+  const handleUrlEnterKeyDown = async (event) => {
+    if (event.key === 'Enter') {
+      await processUrl(youtubeUrl); // 入力された URL を処理
+    }
+  };
+  
+  const handleUrlPaste = async (event) => {
+    event.preventDefault(); // デフォルトの貼り付け処理を無効化
+    const pastedText = event.clipboardData.getData('text'); // 貼り付けられたテキストを取得
+    setYoutubeUrl(pastedText); // 値を更新
+    await processUrl(pastedText); // 貼り付け後の URL を処理
+  };
+  
 
   const timestampExistCheck = (text) =>{
     if (!text) {
@@ -239,17 +304,14 @@ export const Player = () => {
     }
     setIsAutoSearchLyric(true);
     const language = isOverseas ? 'en' : 'ja'
-    const title = await FormPost.fetchTitleByVideoId(videoId)
-    if(title=='Null'){
-      setLyricFormUrlErrorMessage('歌詞は見つかりませんでした: title missing'); // エラーメッセージを設定\
-    }
-    const searchedLyric = await FormPost.searchLyricFromWeb(title, language);
-    if(searchedLyric==null || searchedLyric==''){
+    const searchedLyric = await autoSearchLyric(videoId, language);
+    if(searchedLyric==''){
       setLyricFormUrlErrorMessage('歌詞は見つかりませんでした'); // エラーメッセージを設定
     }else{
       setBeforeAutoLyric(lyric);//自動検索前の歌詞を保存
-      setLyric(searchedLyric);
     }
+
+    setLyric(searchedLyric);
     setIsChangeLyricForm(true);
     setIsAutoSearchLyric(false);
 
@@ -336,6 +398,7 @@ export const Player = () => {
 
             if (isChangeLyricForm) { // 歌詞に変更があった時
               try {
+                await FormPost.updateLyricUpdateDate(videoId);
                 const result = await FormPost.updateLyricInDB(videoId, lyric);
               
                 if (result.error) { // エラーがあればエラーメッセージをセット
@@ -572,24 +635,16 @@ export const Player = () => {
 
   const handleInstVolumeChange = (event, newValue) => {//instのボリュームバーが変更されたら
     setInstVolume(newValue);
-    if (instGainNodeRef.current) {
-      instGainNodeRef.current.gain.value = newValue / 100;
-    }
     resetControlTimeout();
   };
 
   const handleVocalVolumeChange = (event, newValue) => {//vocalのボリュームバーが変更されたら
     setVocalVolume(newValue);
-    if (vocalGainNodeRef.current) {
-      vocalGainNodeRef.current.gain.value = newValue / 100;
-    }
     resetControlTimeout();
   };
 
   const calculateVolume = (value) => {//value(0~100)
-    const calculatedVolume = (value/100)**0.8;// value を 0.0 と 100.0 の範囲にクランプ
-    const clampedVolume = Math.max(0.0, Math.min(calculatedVolume, 100.0));// log₁₀₀(clampedVolume + 1) を計算
-    return clampedVolume;
+    return Math.max(0.0, Math.min(value, 100.0)) / 100.0; //(0.0~1.0)
   };
 
   const handleOverlayClick = () => {//オーバーレイがクリックされたときに呼ばれる関数
@@ -924,10 +979,12 @@ export const Player = () => {
             </Box>
             <TextField
               fullWidth
-              variant='outlined'
+              variant="outlined"
               value={youtubeUrl}
-              onChange={handleUrlChange}
-              placeholder='https://www.youtube.com/watch?v=...'
+              onChange={handleUrlChange} // 入力変更時の処理
+              onPaste={handleUrlPaste}   // 貼り付け時の処理
+              onKeyDown={handleUrlEnterKeyDown} // Enter キー押下時の処理
+              placeholder="https://www.youtube.com/watch?v=..."
               InputProps={{
                 style: { backgroundColor: 'white', color: 'black' },
               }}
@@ -936,50 +993,52 @@ export const Player = () => {
           <Box sx={{ marginBottom: 2 }}>
             <Box sx={{display:'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
               <h3>歌詞</h3>
-              <Box sx={{ display:'flex', flexDirection: 'row',  justifyContent: 'flex-end'}}>
-                <Box sx={{ display: 'flex', alignItems: 'center'}}>
-                  {beforeAutoLyric!= null &&(//検索後に歌詞を元に戻す場合
-                    <Button
-                      variant='contained'
-                      onClick={handleUndoAutoLyric}
-                      sx={{ backgroundColor: '#555', color: 'white', '&:hover': { backgroundColor: '#333' } }}
-                    >
-                      戻す
-                    </Button>
-                  )}
-                </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-                  {isAutoSearchLyric ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <CircularProgress size={24} sx={{ color: 'white' }} />
-                      <Typography sx={{ color: 'white' }}>
-                        歌詞を検索中...
-                      </Typography>
-                    </Box>
-                  ) : (
-                    <>
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={isOverseas}
-                            onChange={handleOverseasChange}
-                            style={{ color: 'white' }}
-                          />
-                        }
-                        label='海外の曲か？'
-                        sx={{ margin: 0 }}
-                      />
+              {isAutoSearchLyricArea && (
+                <Box sx={{ display:'flex', flexDirection: 'row',  justifyContent: 'flex-end'}}>
+                  <Box sx={{ display: 'flex', alignItems: 'center'}}>
+                    {beforeAutoLyric!= null &&(//検索後に歌詞を元に戻す場合
                       <Button
                         variant='contained'
-                        onClick={handleSearchLyric}
+                        onClick={handleUndoAutoLyric}
                         sx={{ backgroundColor: '#555', color: 'white', '&:hover': { backgroundColor: '#333' } }}
                       >
-                        歌詞検索
+                        戻す
                       </Button>
-                    </>
-                  )}
+                    )}
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
+                    {isAutoSearchLyric ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <CircularProgress size={24} sx={{ color: 'white' }} />
+                        <Typography sx={{ color: 'white' }}>
+                          歌詞を検索中...
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={isOverseas}
+                              onChange={handleOverseasChange}
+                              style={{ color: 'white' }}
+                            />
+                          }
+                          label='海外の曲か？'
+                          sx={{ margin: 0 }}
+                        />
+                        <Button
+                          variant='contained'
+                          onClick={handleSearchLyric}
+                          sx={{ backgroundColor: '#555', color: 'white', '&:hover': { backgroundColor: '#333' } }}
+                        >
+                          歌詞検索
+                        </Button>
+                      </>
+                    )}
+                  </Box>
                 </Box>
-              </Box>
+              )}
             </Box>
             <TextField
                 fullWidth
