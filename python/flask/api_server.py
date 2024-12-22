@@ -207,11 +207,6 @@ def fetch_video_data_by_str():  # キーワードをもとにDBからビデオ�
     data = request.get_json()
     search_word = data.get("searchWord")
     video_data = kalyoke_db.get_video_id_from_title_str(search_word)
-    
-    # video_idをvideoIdに変換
-    for video in video_data:
-        video["videoId"] = video.pop("video_id")  # video_idをvideoIdに変更
-    
     return video_data
 
 @app.route("/api/google_api/custom_search/count", methods=["POST"])

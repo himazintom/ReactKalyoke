@@ -330,7 +330,6 @@ export const Player = () => {
     setLyric(searchedLyric);
     setIsChangeLyricForm(true);
     setIsAutoSearchLyric(false);
-
   };
 
   const handleUndoAutoLyric = () =>{

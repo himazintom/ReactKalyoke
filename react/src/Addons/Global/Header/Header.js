@@ -104,10 +104,10 @@ export const Header = () => {
       
       try {
         // 非同期処理を待機して結果を取得
-        const searchResult = await fetchVideoDataByStr(searchQuery);
-  
+        const fetchSearchResult = await fetchVideoDataByStr(searchQuery);
+        console.log("searchResult",fetchSearchResult);
         // 結果をステートにセット
-        setSearchResults(searchResult);
+        setSearchResults(fetchSearchResult);
         
       } catch (error) {
         console.error("検索中にエラーが発生しました:", error);

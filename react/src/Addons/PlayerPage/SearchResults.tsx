@@ -1,5 +1,3 @@
-import React from 'react';
-import { Box, Paper } from '@mui/material';
 import { motion, AnimatePresence, color } from 'framer-motion';
 import { styled } from '@mui/material/styles';
 

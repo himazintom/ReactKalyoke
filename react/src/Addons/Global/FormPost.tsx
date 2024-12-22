@@ -294,6 +294,8 @@ export const fetchVideoDataByStr = async (
 ): Promise<{ title: string; videoId: string }[]> => {
   try {
     const response = await fetchData(`${apiUrl}/api/fetch_video_data_by_str`, { searchWord: searchedWord });
+    console.log("response", response);
+
     if (Array.isArray(response) && response.length === 0) {
       return [
         {
