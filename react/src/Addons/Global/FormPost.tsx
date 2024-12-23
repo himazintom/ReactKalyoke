@@ -5,9 +5,9 @@ const apiUrl = process.env.REACT_APP_API_URL || "";
 const googleAPIKey = process.env.REACT_APP_GOOGLE_API_KEY || "";
 const searchEngineID = process.env.REACT_APP_SEARCH_ENGINE_ID || "";
 
-if (!apiUrl || !googleAPIKey || !searchEngineID) {
-  throw new Error("必要な環境変数が設定されていません。");
-}
+// if (!apiUrl || !googleAPIKey || !searchEngineID) {
+//   throw new Error("必要な環境変数が設定されていません。");
+// }
 
 // 言語設定
 const languages: Record<string, string> = { ja: "歌詞", en: "Lyric" };
@@ -100,11 +100,9 @@ const searchFromAPI = async (api: "google" | "brave", title: string, language: s
     if (api === "google"){
       const { url, headers, params } = searchApiConfig[api];
       const data = await fetchSearchData(url, params(title, language), headers);
-      // console.log("data01", data);
       return data.items?.map((item: any) => item.formattedUrl) || []
     }else{
       const data = await fetchBraveSearchData(title, language);
-      // console.log("data02", data);
       return data || [];
     }
   } catch (error) {
@@ -117,7 +115,6 @@ const searchFromAPI = async (api: "google" | "brave", title: string, language: s
 export const searchLyricFromWeb = async (title: string, language: string): Promise<string | null> => {
   try {
     const apiCount = await googleSearchApiCount();
-    console.log("apiCount", apiCount);
     const api = apiCount < 100 ? "google" : "brave";
     const urls = await searchFromAPI(api, title, language);
 
@@ -193,7 +190,6 @@ export const fetchPlaylistData = async (url: string): Promise<any> => {
 export const fetchLyricFromDB = async (videoId: string): Promise<string | null> => {
   try {
     const response = await fetchData(`${apiUrl}/api/fetch_lyric`, { videoId });
-    console.log("response",response);
     return response.lyric || null;
   } catch (error) {
     console.error("Error fetching lyric from DB:", error);
@@ -204,8 +200,6 @@ export const fetchLyricFromDB = async (videoId: string): Promise<string | null> 
 export const fetchLyricUpdateDateFromDB = async (videoId: string): Promise<string | null> => {
   try {
     const response = await fetchData(`${apiUrl}/api/fetch_lyric_update_date`, { videoId });
-    console.log("date", response);
-
     if (response && typeof response.lyricUpdateDate === "string") {
       return response.lyricUpdateDate;
     } else if (response.lyricUpdateDate == null) {//DBに記録が無かったら「2024-01-01 00:00:00」を返す
@@ -294,8 +288,6 @@ export const fetchVideoDataByStr = async (
 ): Promise<{ title: string; videoId: string }[]> => {
   try {
     const response = await fetchData(`${apiUrl}/api/fetch_video_data_by_str`, { searchWord: searchedWord });
-    console.log("response", response);
-
     if (Array.isArray(response) && response.length === 0) {
       return [
         {

@@ -105,7 +105,6 @@ export const Header = () => {
       try {
         // 非同期処理を待機して結果を取得
         const fetchSearchResult = await fetchVideoDataByStr(searchQuery);
-        console.log("searchResult",fetchSearchResult);
         // 結果をステートにセット
         setSearchResults(fetchSearchResult);
         

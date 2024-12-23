@@ -40,8 +40,11 @@ export const Player = () => {
   
   const setLyricByCookie = async(videoId) => {
     const lyric = await FormPost.fetchLyricFromDB(videoId);
-    console.log("lyric",lyric);
-    setLyric(lyric);
+    if(lyric==null){
+      setLyric("");
+    }else{
+      setLyric(lyric);
+    }
   }
 
   const [everyoneHistory, setEveryoneHistory] = useState([]);
@@ -118,7 +121,6 @@ export const Player = () => {
       if (lyric != "" && lyric != null) {//もしDBに歌詞があったら...
         return lyric;
       }else{//もしDBに歌詞が無かったら...
-        console.log("db空白じゃ!");
         const nowDate = new Date();
 
         // 非同期関数でDBから歌詞の検索日時を取得する
@@ -137,10 +139,8 @@ export const Player = () => {
       
         const diffTime = nowDate.getTime() - lyricUpdateDate.getTime();
         const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // 整数に四捨五入
-        console.log("diffDays", diffDays);
       
         if (diffDays > lyricUpdateIntervalDay) {//もし最後に歌詞検索をしてからlyricUpdateIntervalDay日経っていたら...歌詞を自動で検索する
-          console.log("二っすうたってた");
           
           const title = await FormPost.getTitleByVideoId(videoId);
           const searchLyric = await FormPost.searchLyricFromWeb(title, language);
@@ -155,7 +155,6 @@ export const Player = () => {
 
       const title = await FormPost.getTitleByVideoId(videoId);
       const searchLyric = await FormPost.searchLyricFromWeb(title, language);
-      console.log("DBないねぇ",searchLyric);
 
       setIsAutoSearchLyricArea(true);
       if(searchLyric != "" && searchLyric != null){
@@ -444,7 +443,7 @@ export const Player = () => {
               setIsMusicsReady(false);
   
               setYoutubeApiVideoId(videoId);
-              initializeAudio(data['path']);
+              await initializeAudio(data['path']);
               setEveryoneHistory(data['history']);
               if (!isTimestampLyric) { // もし歌詞がタイムスタンプ式で事前処理がなされてなかったら
                 setPlayerLyricList(
@@ -480,12 +479,13 @@ export const Player = () => {
   const [instVolume, setInstVolume] = useState(100);
   const [vocalVolume, setVocalVolume] = useState(10);
   useEffect(() => {
-    const instVolume = JSON.parse(Cookies.get('instVolume') || 100);
-    if (instVolume) {
+    const instVolume = JSON.parse(Cookies.get('instVolume') || '100'); // Default value should be a string
+    if (instVolume !== null && instVolume !== undefined) {
       setInstVolume(instVolume);
     }
-    const vocalVolume = JSON.parse(Cookies.get('vocalVolume') || 30);
-    if (vocalVolume) {
+
+    const vocalVolume = JSON.parse(Cookies.get('vocalVolume') || '30'); // Default value should be a string
+    if (vocalVolume !== null && vocalVolume !== undefined) {
       setVocalVolume(vocalVolume);
     }
   }, []);
@@ -506,27 +506,19 @@ export const Player = () => {
   useEffect(() => {
     const lyricCCValue = Cookies.get('lyricCC');
     const isLyricCC = lyricCCValue === 'true'; // 文字列をBooleanに変換
-    if (isLyricCC) {
-      setIsLyricCC(isLyricCC);
-    }
+    setIsLyricCC(isLyricCC);
 
     const visibleWaveformValue = Cookies.get('visibleWaveform');
     const isVisibleWaveform = visibleWaveformValue === 'true'; // 文字列をBooleanに変換
-    if (isVisibleWaveform) {
-      setIsVisibleWaveform(isVisibleWaveform);
-    }
+    setIsVisibleWaveform(isVisibleWaveform);
 
     const loopValue = Cookies.get('loop');
     const isLooping = loopValue === 'true'; // 文字列をBooleanに変換
-    if (isLooping) {
-      setIsLooping(isLooping);
-    }
+    setIsLooping(isLooping);
     
     const shuffleValue = Cookies.get('shuffle');
     const isShuffling = shuffleValue === 'true'; // 文字列をBooleanに変換
-    if (isShuffling) {
-      setIsShuffling(isShuffling);
-    }
+    setIsShuffling(isShuffling);
   }, []);
 
   const controlTimeoutRef = useRef(null);
@@ -581,14 +573,14 @@ export const Player = () => {
       setIsPlaying(false);
     }
 
-    const folderpath = hostUrl + path;
+    const folderPath = hostUrl + path;
     // Waveform コンポーネント用のオーディオURLを更新
-    setVocalAudioUrl(`${folderpath}/vocals.mp3`);
-    setInstAudioUrl(`${folderpath}/no_vocals.mp3`);
+    setVocalAudioUrl(`${folderPath}/vocals.mp3`);
+    setInstAudioUrl(`${folderPath}/no_vocals.mp3`);
 
     // オーディオファイルをロード
-    const instAudio = new Audio(`${folderpath}/no_vocals.mp3`);
-    const vocalAudio = new Audio(`${folderpath}/vocals.mp3`);
+    const instAudio = new Audio(`${folderPath}/no_vocals.mp3`);
+    const vocalAudio = new Audio(`${folderPath}/vocals.mp3`);
 
     // 音声が完全に読み込まれるのを待つ
     await Promise.all([
@@ -681,19 +673,24 @@ export const Player = () => {
   };
 
   const seekChange = (value) =>{//特定の位置にシークさせる
-    playerRef.current.seekTo(value);
-    instAudioRef.current.currentTime = value;
-    vocalAudioRef.current.currentTime = value;
+    if(prepareKaraokeStatus == 0){
+      playerRef.current.seekTo(value);
+      instAudioRef.current.currentTime = value;
+      vocalAudioRef.current.currentTime = value;
 
-    if (instWaveformRef.current) {
-      instWaveformRef.current.handleSeekTo(value);
+      if (instWaveformRef.current) {
+        if(isInstWaveFormerReady){
+          instWaveformRef.current.handleSeekTo(value);
+        }
+      }
+      if (vocalWaveformRef.current) {
+        if(isVocalWaveFormerReady){
+          vocalWaveformRef.current.handleSeekTo(value);
+        }
+      }
+      setCurrentTime(value);
+      updatePlayerLyric();//instAudioRefをもとに歌詞を移動
     }
-    if (vocalWaveformRef.current) {
-      vocalWaveformRef.current.handleSeekTo(value);
-    }
-    setCurrentTime(value);
-    updatePlayerLyric();//instAudioRefをもとに歌詞を移動
-
   }
 
   const handleSeekChange = (event, newValue) => {//シークバーが変更されたら呼ばれる関数
@@ -734,8 +731,6 @@ export const Player = () => {
   useEffect(() => {//ボリュームの値が変更されたら音量を変更する
     if (instGainNodeRef.current) {
       instGainNodeRef.current.gain.value = calculateVolume(instVolume);
-
-      // クッキーに配列を保存する
       Cookies.set('instVolume', instVolume, { path: '/', expires: 31 });
     }
     if (vocalGainNodeRef.current) {
@@ -822,9 +817,10 @@ export const Player = () => {
         setIsShufflePlaying(true);
   
         const data = videoData[0];// 配列の最初の要素にアクセス
-        const url = 'https://www.youtube.com/watch?v=' + data['videoId'];
+        const url = 'https://www.youtube.com/watch?v=' + data.videoId;
+        setHistoryData(data.title, data.videoId);
         setYoutubeUrl(url);
-        setLyric(data['lyric']);
+        setLyric(data.lyric);
         setIsChangeLyricForm(true);
       }
     }
@@ -873,18 +869,21 @@ export const Player = () => {
     
   }, [isKaraokeReady]); // isKaraokeReadyが変化したときに実行される
 
-  const handleVocalReady = useCallback(() => {
-    console.log("ボーカルの波形が準備完了しました");
-    setIsVocalWaveFormerReady(true);
+  const handleInstWaveFormerReady = useCallback(() => {
+    const value = originalAudioRef.current.currentTime;
+    instWaveformRef.current.handleSeekTo(value);
+    setIsInstWaveFormerReady(true);
   }, []);
 
-  const handleInstReady = useCallback(() => {
-    console.log("インストルメンタルの波形が準備完了しました");
-    setIsInstWaveFormerReady(true);
+  const handleVocalWaveFormerReady = useCallback(() => {
+    const value = originalAudioRef.current.currentTime;
+    vocalWaveformRef.current.handleSeekTo(value);
+    setIsVocalWaveFormerReady(true);
   }, []);
 
   const toggleLyricCC = () => {//ループ機能のみオンにする
     Cookies.set('lyricCC', !isLyricCC, { path: '/', expires: 31 });
+
     setIsLyricCC(!isLyricCC);
   };
 
@@ -1461,7 +1460,7 @@ export const Player = () => {
               sx={{
                 position: 'absolute',
                 bottom: '50px',
-                left: '50px',
+                left: '70px',
                 color: isLyricCC ? 'skyBlue' : 'white',
               }}
             >
@@ -1474,7 +1473,7 @@ export const Player = () => {
               sx={{
                 position: 'absolute',
                 bottom: '50px',
-                left: '90px',
+                left: '130px',
                 color: isVisibleWaveform ? 'skyBlue' : 'white',
               }}
             >
@@ -1515,7 +1514,7 @@ export const Player = () => {
               sx={{
                 position: 'absolute',
                 bottom: '55px',
-                right: '60px', // 右から60pxに配置（FullScreenボタンとの間隔を確保）
+                right: '70px', // 右から60pxに配置（FullScreenボタンとの間隔を確保）
                 color: isLooping ? 'skyBlue' : 'white', // ループ中は色を変える
               }}
             >
@@ -1528,7 +1527,7 @@ export const Player = () => {
               sx={{
                 position: 'absolute',
                 bottom: '55px',
-                right: '110px', // 右から110pxに配置（他のボタンとの間隔を確保）
+                right: '130px', // 右から110pxに配置（他のボタンとの間隔を確保）
                 color: isShuffling ? 'skyBlue' : 'white', // シャッフル中は色を変える
               }}
             >
@@ -1570,7 +1569,7 @@ export const Player = () => {
               isPlaying={isPlaying} 
               barAlign='top' 
               onReady={() => {
-                  handleVocalReady();
+                  handleVocalWaveFormerReady();
               }} 
               isVisible={isVisibleWaveform && isVocalWaveFormerReady}
             />
@@ -1582,7 +1581,7 @@ export const Player = () => {
               isPlaying={isPlaying}
               barAlign='bottom'
               onReady={() => {
-                handleInstReady();
+                handleInstWaveFormerReady();
               }} 
               isVisible={isVisibleWaveform && isInstWaveFormerReady}
             />
