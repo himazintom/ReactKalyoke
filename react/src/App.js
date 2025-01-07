@@ -30,7 +30,8 @@ export const App = () => {
               <Route path='/' element={<Player />} />
               {/* <Route path='/player' element={<PlayerPage />} /> */}
               <Route path='/pitch' element={<PitchPlayer/>} />
-              <Route path="/search_id/:videoId" element={<SearchVideoId />} />
+              <Route path="/search_id/:videoId" element={<SearchVideoId path={''} />} />
+              <Route path="/search_id/pitch/:videoId" element={<SearchVideoId path={'/pitch'} />} />
               <Route path="/usage" element={<Usage />} />
               <Route path="/lyrics_copy" element={<LyricsCopy />} />
               <Route path="/playlist" element={<Playlist />} />

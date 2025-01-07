@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 genius_token = os.getenv("GENIUS_TOKEN")
 genius = Genius(genius_token)
 
-
 def sort_urls_by_domain_priority(urls):
     domain_priority = [
         "atwiki.jp",
@@ -73,6 +72,7 @@ def get_lyric(url):
             logger.info(f"Accessing 'genius.com' for URL: {url}")
             try:
                 temp_gl = genius.lyrics(song_url=url)
+
                 if temp_gl is None:
                     return ""
                 temp_gl = temp_gl.split("\n")
@@ -83,7 +83,7 @@ def get_lyric(url):
                 return gl
             except requests.HTTPError as http_err:
                 logger.error(f"HTTP error on Genius: {http_err}")
-                return f""
+                return ""
             except Exception as err:
                 logger.error(f"Error on Genius: {err}")
                 return ""

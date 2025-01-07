@@ -113,57 +113,59 @@ export const Player = () => {
     return match ? match[1] : null;
   }
 
-  const autoSearchLyric = async(videoId, language="en") => {//自動で歌詞を検索する必要だあるかを判断し必要だったら検索して歌詞の文字列を返す
-    const existCheck = await FormPost.checkVideoExist(videoId);
-    if (existCheck){
-      const lyric = await FormPost.fetchLyricFromDB(videoId);
-
-      if (lyric != "" && lyric != null) {//もしDBに歌詞があったら...
-        return lyric;
-      }else{//もしDBに歌詞が無かったら...
-        const nowDate = new Date();
-
-        // 非同期関数でDBから歌詞の検索日時を取得する
-        let lyricUpdateDateDB = await FormPost.fetchLyricUpdateDateFromDB(videoId);
-
-        // lyricUpdateDateDBがnullまたは空文字の場合、現在日時で補完
-        if (!lyricUpdateDateDB) {
-          lyricUpdateDateDB = nowDate.toISOString();
-        }
-        let lyricUpdateDate = new Date(lyricUpdateDateDB);
-      
-        // 不正な日付だった場合、現在日時で補完
-        if (isNaN(lyricUpdateDate.getTime())) {
-          lyricUpdateDate = nowDate;
-        }
-      
-        const diffTime = nowDate.getTime() - lyricUpdateDate.getTime();
-        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // 整数に四捨五入
-      
-        if (diffDays > lyricUpdateIntervalDay) {//もし最後に歌詞検索をしてからlyricUpdateIntervalDay日経っていたら...歌詞を自動で検索する
-          
-          const title = await FormPost.getTitleByVideoId(videoId);
-          const searchLyric = await FormPost.searchLyricFromWeb(title, language);
-
-          if(searchLyric != "" && searchLyric != null){
-            FormPost.updateLyricUpdateDate(videoId);
-            return searchLyric;
-          }
-        }
-      }
-    }else{//DBに音源が無かったら
-
-      const title = await FormPost.getTitleByVideoId(videoId);
-      const searchLyric = await FormPost.searchLyricFromWeb(title, language);
-
-      setIsAutoSearchLyricArea(true);
-      if(searchLyric != "" && searchLyric != null){
-        return searchLyric;
-      }
+  const searchAndSaveLyric = async (videoId, title, language) => {
+    const searchedLyric = await FormPost.searchLyricFromWeb(title, language);
+    if (searchedLyric) {
+      await FormPost.updateLyricUpdateDate(videoId);
+      return searchedLyric;
     }
-    //もし最後に歌詞検索をしてからlyricUpdateIntervalDay日経っていなかったら
     return "";
   };
+  
+  const autoSearchLyric = async (videoId, language = "en") => {
+    try {
+      setIsAutoSearchLyric(true);
+      const existCheck = await FormPost.checkVideoExist(videoId);
+      let resultLyric = "";
+  
+      if (existCheck) {
+        const fetchedLyric = await FormPost.fetchLyricFromDB(videoId);
+  
+        if (fetchedLyric) {
+          resultLyric = fetchedLyric;
+        } else {
+          const nowDate = new Date();
+          let lyricUpdateDateDB = await FormPost.fetchLyricUpdateDateFromDB(videoId);
+          let lyricUpdateDate = lyricUpdateDateDB ? new Date(lyricUpdateDateDB) : nowDate;
+  
+          if (isNaN(lyricUpdateDate.getTime())) lyricUpdateDate = nowDate;
+  
+          const diffDays = Math.round((nowDate - lyricUpdateDate) / (1000 * 60 * 60 * 24));
+  
+          if (diffDays > lyricUpdateIntervalDay) {
+            const title = await FormPost.getTitleByVideoId(videoId);
+            resultLyric = await searchAndSaveLyric(videoId, title, language);
+          }
+        }
+      } else {
+        const title = await FormPost.getTitleByVideoId(videoId);
+        const searchedLyric = await searchAndSaveLyric(videoId, title, language);
+  
+        setIsAutoSearchLyricArea(true);
+        if (searchedLyric) {
+          return searchedLyric;
+        }
+      }
+  
+      return resultLyric;
+    } catch (error) {
+      console.error("Error in autoSearchLyric:", error);
+      return "";
+    } finally {
+      setIsAutoSearchLyric(false);
+    }
+  };
+  
 
   const processUrl = async (url) => {
     let videoId = extractVideoId(url);
@@ -305,37 +307,6 @@ export const Player = () => {
     setLyric(event.target.value);
   };
 
-  const handleOverseasChange = (event) => {
-    setIsOverseas(event.target.checked);
-  };
-
-  const handleSearchLyric = async() => {//現在のvideoIdの曲の歌詞をwebから検索して返す
-    const videoId = extractVideoId(youtubeUrl);//youtubeのurlの形式か確認
-    if (!videoId) {
-      setYoutubeUrlErrorMessage('入力されたURLはYouTubeのURLの形式ではありません'); // エラーメッセージを設定
-      return; // ここで終了して戻る
-    } else {
-      setYoutubeUrlErrorMessage(''); // エラーメッセージをクリア
-    }
-    setIsAutoSearchLyric(true);
-    const language = isOverseas ? 'en' : 'ja'
-    const searchedLyric = await autoSearchLyric(videoId, language);
-    if(searchedLyric==''){
-      setLyricFormUrlErrorMessage('歌詞は見つかりませんでした'); // エラーメッセージを設定
-    }else{
-      setBeforeAutoLyric(lyric);//自動検索前の歌詞を保存
-    }
-
-    setLyric(searchedLyric);
-    setIsChangeLyricForm(true);
-    setIsAutoSearchLyric(false);
-  };
-
-  const handleUndoAutoLyric = () =>{
-    setLyric(beforeAutoLyric);
-    setBeforeAutoLyric(null);
-  }
-
   const setHistoryData = (title, videoId) => {//クッキーに追加で履歴を残す
     const historyData = { 
       title: title,
@@ -455,7 +426,10 @@ export const Player = () => {
                 setShowInitialOverlay(true);
               }
               if (lyricScrollBoxRef.current) {//歌詞のスクロールを一番上にする
-                lyricScrollBoxRef.current.scrollTop = 0;
+                lyricScrollBoxRef.current.scrollTo({
+                  top: 0, // 一番上にスクロール
+                  behavior: "smooth", // スムーズなスクロールを指定
+                });
               }
               setHistoryData(data['title'], videoId);
             } catch (error) {
@@ -536,28 +510,11 @@ export const Player = () => {
   const lyricScrollBoxRef = useRef(null);
   const lyricLineRef = useRef([]); // 各歌詞行の ref を保持
 
-  // function useLoggedState(initialValue, name) {
-  //   const [state, setState] = useState(initialValue);
-  
-  //   const setLoggedState = useCallback((value) => {
-  //     setState(value);
-  //   }, [name]);
-  
-  //   return [state, setLoggedState];
-  // }
-  // const [isPlayerLyricReady, setIsPlayerLyricReady] = useLoggedState(false, 'isPlayerLyricReady');
-  // const [isInstWaveFormerReady, setIsInstWaveFormerReady] = useLoggedState(false, 'isInstWaveFormerReady');
-  // const [isVocalWaveFormerReady, setIsVocalWaveFormerReady] = useLoggedState(false, 'isVocalWaveFormerReady');
-  // const [isYoutubeApiReady, setIsYoutubeApiReady] = useLoggedState(false, 'isYoutubeApiReady');
-  // const [isMusicsReady, setIsMusicsReady] = useLoggedState(false, 'isMusicsReady');
-
   const [isPlayerLyricReady, setIsPlayerLyricReady] = useState(false);
   const [isInstWaveFormerReady, setIsInstWaveFormerReady] = useState(false);
   const [isVocalWaveFormerReady, setIsVocalWaveFormerReady] = useState(false);
   const [isYoutubeApiReady, setIsYoutubeApiReady] = useState(false);
   const [isMusicsReady, setIsMusicsReady] = useState(false);
-  // const isKaraokeReady = isPlayerLyricReady && isInstWaveFormerReady && isVocalWaveFormerReady && isYoutubeApiReady && isMusicsReady;
-  // const isKaraokeReady = isPlayerLyricReady && isYoutubeApiReady && isMusicsReady;
   const [isKaraokeReady, setIsKaraokeReady] = useState(false);
   const [isOnceKaraokeReady, setIsOnceKaraokeReady] = useState(false);
 
@@ -804,6 +761,12 @@ export const Player = () => {
     vocalAudioRef.current.pause();
     
     if (isLooping) {
+      if (lyricScrollBoxRef.current) {//歌詞のスクロールを一番上にする
+        lyricScrollBoxRef.current.scrollTo({
+          top: 0, // 一番上にスクロール
+          behavior: "smooth", // スムーズなスクロールを指定
+        });
+      }
       seekChange(0);
       setIsPlaying(true);
       playerRef.current.playVideo();
@@ -854,6 +817,12 @@ export const Player = () => {
     if(isKaraokeReady){//カラオケの準備完了!
       if(!isOnceKaraokeReady){
         setIsOnceKaraokeReady(true);
+        if (videoContainerRef.current) {//準備ができたら動画を映す部分まで画面をスクロールさせる
+          videoContainerRef.current.scrollIntoView({
+            behavior: 'smooth',  // スムーズにスクロール
+            block: 'center',     // 中央に表示
+          });
+        }
       }
       if(isShufflePlaying){//シャッフル再生での音楽の切り替わりだったら、準備完了後に再生させる！
         setTimeout(() => {
@@ -870,13 +839,13 @@ export const Player = () => {
   }, [isKaraokeReady]); // isKaraokeReadyが変化したときに実行される
 
   const handleInstWaveFormerReady = useCallback(() => {
-    const value = originalAudioRef.current.currentTime;
+    const value = instAudioRef.current.currentTime;
     instWaveformRef.current.handleSeekTo(value);
     setIsInstWaveFormerReady(true);
   }, []);
 
   const handleVocalWaveFormerReady = useCallback(() => {
-    const value = originalAudioRef.current.currentTime;
+    const value = instAudioRef.current.currentTime;
     vocalWaveformRef.current.handleSeekTo(value);
     setIsVocalWaveFormerReady(true);
   }, []);
@@ -1042,52 +1011,6 @@ export const Player = () => {
           <Box sx={{ marginBottom: 2 }}>
             <Box sx={{display:'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
               <h3>歌詞</h3>
-              {isAutoSearchLyricArea && (
-                <Box sx={{ display:'flex', flexDirection: 'row',  justifyContent: 'flex-end'}}>
-                  <Box sx={{ display: 'flex', alignItems: 'center'}}>
-                    {beforeAutoLyric!= null &&(//検索後に歌詞を元に戻す場合
-                      <Button
-                        variant='contained'
-                        onClick={handleUndoAutoLyric}
-                        sx={{ backgroundColor: '#555', color: 'white', '&:hover': { backgroundColor: '#333' } }}
-                      >
-                        戻す
-                      </Button>
-                    )}
-                  </Box>
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between'}}>
-                    {isAutoSearchLyric ? (
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                        <CircularProgress size={24} sx={{ color: 'white' }} />
-                        <Typography sx={{ color: 'white' }}>
-                          歌詞を検索中...
-                        </Typography>
-                      </Box>
-                    ) : (
-                      <>
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              checked={isOverseas}
-                              onChange={handleOverseasChange}
-                              style={{ color: 'white' }}
-                            />
-                          }
-                          label='海外の曲か？'
-                          sx={{ margin: 0 }}
-                        />
-                        <Button
-                          variant='contained'
-                          onClick={handleSearchLyric}
-                          sx={{ backgroundColor: '#555', color: 'white', '&:hover': { backgroundColor: '#333' } }}
-                        >
-                          歌詞検索
-                        </Button>
-                      </>
-                    )}
-                  </Box>
-                </Box>
-              )}
             </Box>
             <TextField
                 fullWidth
@@ -1106,21 +1029,30 @@ export const Player = () => {
           
           <Box sx={{ textAlign: 'center' }}>
             {prepareKaraokeStatus === 0 ? (
-              <Button
-                variant='contained'
-                onClick={() => {
-                  setPrepareKaraokeStatus(1);
-                }}
-                sx={{ 
-                  width: '200px', 
-                  height: '50px', 
-                  backgroundColor: '#333', 
-                  color: 'white', 
-                  '&:hover': { backgroundColor: '#111' } 
-                }}
-              >
-                Sing
-              </Button>
+              isAutoSearchLyric ? (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <CircularProgress size={24} sx={{ color: 'white' }} />
+                  <Typography sx={{ color: 'white' }}>
+                    歌詞を検索中...
+                  </Typography>
+                </Box>
+              ) : (
+                <Button
+                  variant='contained'
+                  onClick={() => {
+                    setPrepareKaraokeStatus(1);
+                  }}
+                  sx={{ 
+                    width: '200px', 
+                    height: '50px', 
+                    backgroundColor: '#666', 
+                    color: 'white', 
+                    '&:hover': { backgroundColor: '#444' } 
+                  }}
+                >
+                  Sing
+                </Button>
+              )
             ) : (
               <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50px' }}>
                 <CircularProgress sx={{ color: 'white' }} />
@@ -1184,6 +1116,7 @@ export const Player = () => {
             xs: '56.25%',
             md: '45%',
           },
+          maxWidth: (isFullScreen ? '1920px' : '1280px'),
           height: 0,
           margin: '0 auto',
           display: (isKaraokeReady || isOnceKaraokeReady) ? 'block' : 'none', // ここで表示・非表示を切り替える
@@ -1270,6 +1203,7 @@ export const Player = () => {
             }}
           >
             <Box
+              ref={lyricScrollBoxRef}
               sx={{
                 height: {
                   xs: '150px',

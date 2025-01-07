@@ -5,9 +5,9 @@ const apiUrl = process.env.REACT_APP_API_URL || "";
 const googleAPIKey = process.env.REACT_APP_GOOGLE_API_KEY || "";
 const searchEngineID = process.env.REACT_APP_SEARCH_ENGINE_ID || "";
 
-// if (!apiUrl || !googleAPIKey || !searchEngineID) {
-//   throw new Error("必要な環境変数が設定されていません。");
-// }
+if (!apiUrl || !googleAPIKey || !searchEngineID) {
+  throw new Error("必要な環境変数が設定されていません。");
+}
 
 // 言語設定
 const languages: Record<string, string> = { ja: "歌詞", en: "Lyric" };

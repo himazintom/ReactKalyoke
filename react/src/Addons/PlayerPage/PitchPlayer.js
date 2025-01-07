@@ -117,58 +117,58 @@ export const PitchPlayer = () => {
     return match ? match[1] : null;
   }
 
-  const autoSearchLyric = async(videoId, language="en") => {
-    // 自動で歌詞を検索する必要だあるかを判断し必要だったら検索して歌詞の文字列を返す
-    const existCheck = await FormPost.checkVideoExist(videoId);
-    if (existCheck) {
-      const lyric = await FormPost.fetchLyricFromDB(videoId);
+  const searchAndSaveLyric = async (videoId, title, language) => {
+    const searchedLyric = await FormPost.searchLyricFromWeb(title, language);
+    if (searchedLyric) {
+      await FormPost.updateLyricUpdateDate(videoId);
+      return searchedLyric;
+    }
+    return "";
+  };
   
-      if (lyric != "" && lyric != null) { // もしDBに歌詞があったら...
-        return lyric;
-      } else { // もしDBに歌詞が無かったら...
-        const nowDate = new Date();
+  const autoSearchLyric = async (videoId, language = "en") => {
+    try {
+      setIsAutoSearchLyric(true);
+      const existCheck = await FormPost.checkVideoExist(videoId);
+      let resultLyric = "";
   
-        // 非同期関数でDBから歌詞の検索日時を取得する
-        let lyricUpdateDateDB = await FormPost.fetchLyricUpdateDateFromDB(videoId);
+      if (existCheck) {
+        const fetchedLyric = await FormPost.fetchLyricFromDB(videoId);
   
-        // lyricUpdateDateDBがnullまたは空文字の場合、現在日時で補完
-        if (!lyricUpdateDateDB) {
-          lyricUpdateDateDB = nowDate.toISOString();
-        }
-        let lyricUpdateDate = new Date(lyricUpdateDateDB);
-      
-        // 不正な日付だった場合、現在日時で補完
-        if (isNaN(lyricUpdateDate.getTime())) {
-          lyricUpdateDate = nowDate;
-        }
-      
-        const diffTime = nowDate.getTime() - lyricUpdateDate.getTime();
-        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24)); // 整数に四捨五入
-      
-        if (diffDays > lyricUpdateIntervalDay) { // もし最後に歌詞検索をしてからlyricUpdateIntervalDay日経っていたら...歌詞を自動で検索する
-          
-          const title = await FormPost.getTitleByVideoId(videoId);
-          const searchLyric = await FormPost.searchLyricFromWeb(title, language);
+        if (fetchedLyric) {
+          resultLyric = fetchedLyric;
+        } else {
+          const nowDate = new Date();
+          let lyricUpdateDateDB = await FormPost.fetchLyricUpdateDateFromDB(videoId);
+          let lyricUpdateDate = lyricUpdateDateDB ? new Date(lyricUpdateDateDB) : nowDate;
   
-          if (searchLyric != "" && searchLyric != null) {
-            FormPost.updateLyricUpdateDate(videoId);
-            return searchLyric;
+          if (isNaN(lyricUpdateDate.getTime())) lyricUpdateDate = nowDate;
+  
+          const diffDays = Math.round((nowDate - lyricUpdateDate) / (1000 * 60 * 60 * 24));
+  
+          if (diffDays > lyricUpdateIntervalDay) {
+            const title = await FormPost.getTitleByVideoId(videoId);
+            resultLyric = await searchAndSaveLyric(videoId, title, language);
           }
         }
-      }
-    } else { // DBに音源が無かったら
-      const title = await FormPost.getTitleByVideoId(videoId);
-      const searchLyric = await FormPost.searchLyricFromWeb(title, language);
+      } else {
+        const title = await FormPost.getTitleByVideoId(videoId);
+        const searchedLyric = await searchAndSaveLyric(videoId, title, language);
   
-      setIsAutoSearchLyricArea(true);
-      if (searchLyric != "" && searchLyric != null) {
-        return searchLyric;
+        setIsAutoSearchLyricArea(true);
+        if (searchedLyric) {
+          return searchedLyric;
+        }
       }
+  
+      return resultLyric;
+    } catch (error) {
+      console.error("Error in autoSearchLyric:", error);
       return "";
+    } finally {
+      setIsAutoSearchLyric(false);
     }
-    // もし最後に歌詞検索をしてからlyricUpdateIntervalDay日経っていない or 初回検索でwebから歌詞が見つからなかったら
-    return "";
-  };  
+  };
 
   const processUrl = async (url) => {
     let videoId = extractVideoId(url);
@@ -368,10 +368,8 @@ export const PitchPlayer = () => {
         case 1:
           setIsTimestampLyric(false);
           setPrepareKaraokeStatus(2);
-
           break;
         case 2: // フォームにミスがないか確認
-
           if (!videoId) {
             setYoutubeUrlErrorMessage('入力されたURLはYouTubeのURLの形式ではありません'); // エラーメッセージを設定
             return; // ここで終了して戻る
@@ -448,8 +446,8 @@ export const PitchPlayer = () => {
               setIsYoutubeApiReady(false);
               setIsMusicsReady(false);
   
-              setYoutubeApiVideoId(videoId);
               await initializeAudio(data['path']);
+              setYoutubeApiVideoId(videoId);
               setEveryoneHistory(data['history']);
               if (!isTimestampLyric) { // もし歌詞がタイムスタンプ式で事前処理がなされてなかったら
                 setPlayerLyricList(
@@ -461,7 +459,10 @@ export const PitchPlayer = () => {
                 setShowInitialOverlay(true);
               }
               if (lyricScrollBoxRef.current) {//歌詞のスクロールを一番上にする
-                lyricScrollBoxRef.current.scrollTop = 0;
+                lyricScrollBoxRef.current.scrollTo({
+                  top: 0, // 一番上にスクロール
+                  behavior: "smooth", // スムーズなスクロールを指定
+                });
               }
               setHistoryData(data['title'], videoId);
             } catch (error) {
@@ -535,6 +536,7 @@ export const PitchPlayer = () => {
   const originalAudioRef = useRef(null);
   const videoContainerRef = useRef(null);
   const audioContextRef = useRef(null);
+  const originalGainNodeRef = useRef(null);
   const instGainNodeRef = useRef(null);
   const vocalGainNodeRef = useRef(null);
   const instAudioRef = useRef(null);
@@ -547,28 +549,11 @@ export const PitchPlayer = () => {
   const lyricScrollBoxRef = useRef(null);
   const lyricLineRef = useRef([]); // 各歌詞行の ref を保持
 
-  // function useLoggedState(initialValue, name) {
-  //   const [state, setState] = useState(initialValue);
-  
-  //   const setLoggedState = useCallback((value) => {
-  //     setState(value);
-  //   }, [name]);
-  
-  //   return [state, setLoggedState];
-  // }
-  // const [isPlayerLyricReady, setIsPlayerLyricReady] = useLoggedState(false, 'isPlayerLyricReady');
-  // const [isInstWaveFormerReady, setIsInstWaveFormerReady] = useLoggedState(false, 'isInstWaveFormerReady');
-  // const [isVocalWaveFormerReady, setIsVocalWaveFormerReady] = useLoggedState(false, 'isVocalWaveFormerReady');
-  // const [isYoutubeApiReady, setIsYoutubeApiReady] = useLoggedState(false, 'isYoutubeApiReady');
-  // const [isMusicsReady, setIsMusicsReady] = useLoggedState(false, 'isMusicsReady');
-
   const [isPlayerLyricReady, setIsPlayerLyricReady] = useState(false);
   const [isInstWaveFormerReady, setIsInstWaveFormerReady] = useState(false);
   const [isVocalWaveFormerReady, setIsVocalWaveFormerReady] = useState(false);
   const [isYoutubeApiReady, setIsYoutubeApiReady] = useState(false);
   const [isMusicsReady, setIsMusicsReady] = useState(false);
-  // const isKaraokeReady = isPlayerLyricReady && isInstWaveFormerReady && isVocalWaveFormerReady && isYoutubeApiReady && isMusicsReady;
-  // const isKaraokeReady = isPlayerLyricReady && isYoutubeApiReady && isMusicsReady;
   const [isKaraokeReady, setIsKaraokeReady] = useState(false);
   const [isOnceKaraokeReady, setIsOnceKaraokeReady] = useState(false);
 
@@ -596,7 +581,12 @@ export const PitchPlayer = () => {
     setInstAudioUrl(`${folderPath}/no_vocals.mp3`);
 
     const originalAudio = new Audio(`${folderPath}/no_vocals.mp3`);
-    originalAudio.muted = true;
+    const originalSource = audioContextRef.current.createMediaElementSource(originalAudio);
+    const originalGainNode = audioContextRef.current.createGain();
+
+    originalSource.connect(originalGainNode).connect(audioContextRef.current.destination);
+
+    originalGainNode.gain.value = 0;
     originalAudio.loop = false;
     originalAudio.addEventListener('ended', handleEndedMusic);
 
@@ -670,7 +660,7 @@ export const PitchPlayer = () => {
   const handlePlayPause = (event) => {//再生・一時停止ボタンが押されたら...
     event.stopPropagation();
     if (isPlaying) {//再生中だったら止める
-      originalAudioRef.current.pause()
+      originalAudioRef.current.pause();
       playerRef.current.pauseVideo();
       instAudioRef.current.stop();
       vocalAudioRef.current.stop();
@@ -778,15 +768,14 @@ export const PitchPlayer = () => {
 
   useEffect(() => {//ボリュームの値が変更されたら音量を変更する
     if (instGainNodeRef.current) {
-
       instGainNodeRef.current.gain.value = calculateVolume(instVolume);
+      Cookies.set('instVolume', instVolume, { path: '/', expires: 31 });
     }
     if (vocalGainNodeRef.current) {
       vocalGainNodeRef.current.gain.value = calculateVolume(vocalVolume);
+      Cookies.set('vocalVolume', vocalVolume, { path: '/', expires: 31 });
     }
   }, [instVolume, vocalVolume]);
-
-
 
   useEffect(() => {
     const handleFocus = () => {
@@ -849,10 +838,14 @@ export const PitchPlayer = () => {
     playerRef.current.pauseVideo();
     instAudioRef.current.stop();
     vocalAudioRef.current.stop();
-    console.log("終わったね");
     
     if (isLooping) {
-      console.log("ループします");
+      if (lyricScrollBoxRef.current) {//歌詞のスクロールを一番上にする
+        lyricScrollBoxRef.current.scrollTo({
+          top: 0, // 一番上にスクロール
+          behavior: "smooth", // スムーズなスクロールを指定
+        });
+      }
       seekChange(0);
       setIsPlaying(true);
       originalAudioRef.current.play()
@@ -861,8 +854,6 @@ export const PitchPlayer = () => {
       vocalAudioRef.current.start();
       syncSeekOfMusicAndYoutubeApi();
     } else if (isShuffling) {
-      console.log("シャッフルします");
-  
       const videoData = await FormPost.fetchRandomMusics(1);
       if (videoData && videoData.length > 0) {
         setIsShufflePlaying(true);
@@ -906,6 +897,12 @@ export const PitchPlayer = () => {
     if(isKaraokeReady){//カラオケの準備完了!
       if(!isOnceKaraokeReady){
         setIsOnceKaraokeReady(true);
+        if (videoContainerRef.current) {//準備ができたら動画を映す部分まで画面をスクロールさせる
+          videoContainerRef.current.scrollIntoView({
+            behavior: 'smooth',  // スムーズにスクロール
+            block: 'center',     // 中央に表示
+          });
+        }
       }
       if(isShufflePlaying){//シャッフル再生での音楽の切り替わりだったら、準備完了後に再生させる！
         setTimeout(() => {
@@ -1031,7 +1028,7 @@ export const PitchPlayer = () => {
           <Typography variant='h5' sx={{ marginBottom: 2 }}>あなたへのオススメ！</Typography>
             {recommendation.map((song, index) => (
               <Typography key={index} sx={{ marginBottom: 1 }}>
-                <Link href={`${hostUrl}/search_id/${song.videoId}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
+                <Link href={`${hostUrl}/search_id/pitch/${song.videoId}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
                   {song.title}
                 </Link>
               </Typography>
@@ -1201,7 +1198,7 @@ export const PitchPlayer = () => {
             <Typography variant='h5' sx={{ marginBottom: 2 }}>あなたの履歴</Typography>
             {yourHistory.map((song, index) => (
               <Typography key={index} sx={{ marginBottom: 1 }}>
-                <Link href={`${hostUrl}/search_id/${song.videoId}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
+                <Link href={`${hostUrl}/search_id/pitch/${song.videoId}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
                   {song.title}
                 </Link>
               </Typography>
@@ -1215,7 +1212,7 @@ export const PitchPlayer = () => {
             <Typography variant='h5' sx={{ marginBottom: 2 }}>みんなの履歴</Typography>
             {everyoneHistory.map((song, index) => (
               <Typography key={index} sx={{ marginBottom: 1 }}>
-                <Link href={`${hostUrl}/search_id/${song.videoId}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
+                <Link href={`${hostUrl}/search_id/pitch/${song.videoId}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
                   {song.title}
                 </Link>
               </Typography>
@@ -1238,7 +1235,7 @@ export const PitchPlayer = () => {
           },
           height: 0,
           margin: '0 auto',
-          display: (isKaraokeReady || isOnceKaraokeReady) ? 'block' : 'none', // ここで表示・非表示を切り替える
+          display: (isKaraokeReady) ? 'block' : 'none', // ここで表示・非表示を切り替える
           
         }}
       >
@@ -1322,6 +1319,7 @@ export const PitchPlayer = () => {
             }}
           >
             <Box
+              ref={lyricScrollBoxRef}
               sx={{
                 height: {
                   xs: '150px',
@@ -1501,6 +1499,7 @@ export const PitchPlayer = () => {
                 bottom: '50px',
                 left: '10px',
                 color: 'white',
+                height: '36px',
               }}
             >
               {isPlaying ? <PauseIcon /> : <PlayArrowIcon />}
@@ -1514,6 +1513,7 @@ export const PitchPlayer = () => {
                 bottom: '50px',
                 left: '70px',
                 color: isLyricCC ? 'skyBlue' : 'white',
+                height: '36px',
               }}
             >
               <ClosedCaptionIcon />
@@ -1527,6 +1527,7 @@ export const PitchPlayer = () => {
                 bottom: '50px',
                 left: '130px',
                 color: isVisibleWaveform ? 'skyBlue' : 'white',
+                height: '36px',
               }}
             >
               <GraphicEqIcon />
@@ -1536,18 +1537,42 @@ export const PitchPlayer = () => {
             <Box
               sx={{
                 position: 'absolute',
-                bottom: '50px',
-                left: '190px',
+                top: { xs: '0px', lg: 'auto' }, // 'auto' を明示的に指定
+                bottom: { xs: 'auto', md: '50px' },
+                left: { xs: 'auto', lg: '190px' },
                 display: 'flex',
-                alignItems: 'center',
+                justifyContent: { xs: 'flex-start', md: 'center'},
                 color: 'white',
+                height: { xs: '24px', lg: '36px' },
               }}
             >
-              <Button onClick={() => handlePitchChange(-1)} sx={{ color: 'white', fontSize: '24px' }}>-</Button>
-              <Typography variant="body1" sx={{ margin: '0 10px', fontSize: '24px' }}>
+              <Button
+                onClick={() => handlePitchChange(-1)}
+                sx={{
+                  color: 'white',
+                  fontSize: { xs: '16px', md: '24px' },
+                }}
+              >
+                -
+              </Button>
+              <Typography
+                variant="body1"
+                sx={{
+                  fontSize: { xs: '16px', md: '24px' },
+                  userSelect: 'none', // テキストを選択不可能にする
+                }}
+              >
                 {currentPitch}
               </Typography>
-              <Button onClick={() => handlePitchChange(1)} sx={{ color: 'white', fontSize: '24px' }}>+</Button>
+              <Button
+                onClick={() => handlePitchChange(1)}
+                sx={{
+                  color: 'white',
+                  fontSize: { xs: '16px', md: '24px' },
+                }}
+              >
+                +
+              </Button>
             </Box>
 
             {/* シークバー */}

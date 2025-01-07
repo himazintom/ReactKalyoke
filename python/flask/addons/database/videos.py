@@ -45,7 +45,7 @@ def update_video_lyric_update_date_from_video_id(video_id):
 
 def add_to_videos_database(data):
     add_video = (
-        "INSERT INTO videos (site, video_id, title, lyric, lyric_update_date folder_path, register_date, update_date) "
+        "INSERT INTO videos (site, video_id, title, lyric, lyric_update_date, folder_path, register_date, update_date) "
         "VALUES (%(site)s, %(video_id)s, %(title)s, %(lyric)s, %(lyric_update_date)s, %(folder_path)s, %(register_date)s, %(update_date)s) "
         "ON DUPLICATE KEY UPDATE "
         "title = VALUES(title), lyric = VALUES(lyric), folder_path = VALUES(folder_path), update_date = VALUES(update_date)"

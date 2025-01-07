@@ -165,3 +165,7 @@ docker run -d --rm --name react-kalyoke-db -v /db/db_data:/var/lib/mysql -p 3306
 docker exec -it react-kalyoke-db bash
 mariadb -u root -p
 ```
+
+##### pipの更新のため定期的に行ったほうがいいかも
+docker compose build --no-cache
+docker compose up -d

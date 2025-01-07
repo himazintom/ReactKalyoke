@@ -3,6 +3,7 @@
 /python/init.sh
 /react/docker-entrypoint.sh
 /sqlmemo.txt
+/volumes.zip
 
 
 # 環境ファイル
