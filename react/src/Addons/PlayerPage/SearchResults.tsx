@@ -8,6 +8,7 @@ const ScrollableResults = styled(motion.div)(({ theme }) => ({
   width: '300px',
   maxHeight: '400px',
   overflowY: 'auto',
+  overflowX: 'hidden', // 横スクロールを隠す
   zIndex: 1000,
   borderRadius: '4px',
   '&::-webkit-scrollbar': {
@@ -39,6 +40,8 @@ const SearchResultItem = styled(motion.div)(({ theme }) => ({
   '&:hover': {
     backgroundColor: '#f0f0f0'
   },
+  whiteSpace: 'normal', // テキストを折り返す
+  wordWrap: 'break-word', // 長い単語を折り返す
 }));
 
 interface SearchResult {

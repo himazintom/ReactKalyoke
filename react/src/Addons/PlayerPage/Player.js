@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Box, Slider, Button, Typography, Checkbox, TextField, FormControlLabel, Link } from '@mui/material';
+import { Box, Slider, Button, Typography, TextField, Link } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import YouTube from 'react-youtube';
 import Waveform from './Waveform.jsx';
@@ -18,7 +18,6 @@ import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
 import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 
 import * as FormPost from '../Global/FormPost.tsx';
-import { title } from 'process';
 
 export const Player = () => {
   const hostUrl = process.env.REACT_APP_HOST_URL;
@@ -1112,15 +1111,11 @@ export const Player = () => {
             xs: '100%',
             md: '80%',
           },
-          paddingBottom: {
-            xs: '56.25%',
-            md: '45%',
-          },
           maxWidth: (isFullScreen ? '1920px' : '1280px'),
-          height: 0,
+          aspectRatio: '16/9',
+          height: 'auto',
           margin: '0 auto',
           display: (isKaraokeReady || isOnceKaraokeReady) ? 'block' : 'none', // ここで表示・非表示を切り替える
-          
         }}
       >
         <YouTube

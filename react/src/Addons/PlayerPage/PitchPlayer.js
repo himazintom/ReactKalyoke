@@ -20,7 +20,6 @@ import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
 import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 
 import * as FormPost from '../Global/FormPost.tsx';
-import { title } from 'process';
 
 export const PitchPlayer = () => {
   const hostUrl = process.env.REACT_APP_HOST_URL;
@@ -1229,14 +1228,11 @@ export const PitchPlayer = () => {
             xs: '100%',
             md: '80%',
           },
-          paddingBottom: {
-            xs: '56.25%',
-            md: '45%',
-          },
-          height: 0,
+          maxWidth: (isFullScreen ? '1920px' : '1280px'),
+          aspectRatio: '16/9',
+          height: 'auto',
           margin: '0 auto',
-          display: (isKaraokeReady) ? 'block' : 'none', // ここで表示・非表示を切り替える
-          
+          display: (isKaraokeReady || isOnceKaraokeReady) ? 'block' : 'none', // ここで表示・非表示を切り替える
         }}
       >
         <YouTube
@@ -1677,7 +1673,7 @@ export const PitchPlayer = () => {
               barAlign='bottom'
               onReady={() => {
                 handleInstWaveFormerReady();
-              }} 
+              }}
               isVisible={isVisibleWaveform && isInstWaveFormerReady}
             />
           </Box>

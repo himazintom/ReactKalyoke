@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
 import { Header } from './Addons/Global/Header/Header';
 import { Footer } from './Addons/Global/Footer/Footer';
-import './Addons/PlayerPage/MainBackground.scss';
+import './Addons/Global/MainBackground.scss';
 
 import { Player } from './Addons/PlayerPage/Player';
 // import { PlayerPage } from './Addons/Player/PlayerPage';
