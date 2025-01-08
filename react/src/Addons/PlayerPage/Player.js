@@ -1114,6 +1114,7 @@ export const Player = () => {
           maxWidth: (isFullScreen ? '1920px' : '1280px'),
           aspectRatio: '16/9',
           height: 'auto',
+          paddingBottom: '4px',//これがないと、Player展開時に縦方向のスクロールバーが表示されることになる。
           margin: '0 auto',
           display: (isKaraokeReady || isOnceKaraokeReady) ? 'block' : 'none', // ここで表示・非表示を切り替える
         }}
