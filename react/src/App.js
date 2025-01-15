@@ -5,7 +5,7 @@ import { Footer } from './Addons/Global/Footer/Footer';
 import './Addons/Global/MainBackground.scss';
 
 import { Player } from './Addons/PlayerPage/Player';
-// import { PlayerPage } from './Addons/Player/PlayerPage';
+import { SeparatePlayer } from './Addons/SeparatePlayer/SeparatePlayer';
 import { PitchPlayer } from './Addons/PlayerPage/PitchPlayer';
 import { SearchVideoId } from './Addons/Global/SearchVideoId';
 import { Usage } from './Addons/Usage/Usage';
@@ -28,7 +28,8 @@ export const App = () => {
           <div className="main-background">
             <Routes>
               <Route path='/' element={<Player />} />
-              {/* <Route path='/player' element={<PlayerPage />} /> */}
+              <Route path='/player' element={<SeparatePlayer path={''}/>} />
+              <Route path='/player/pitch' element={<SeparatePlayer path={'/pitch'}/>} />
               <Route path='/pitch' element={<PitchPlayer/>} />
               <Route path="/search_id/:videoId" element={<SearchVideoId path={''} />} />
               <Route path="/search_id/pitch/:videoId" element={<SearchVideoId path={'/pitch'} />} />

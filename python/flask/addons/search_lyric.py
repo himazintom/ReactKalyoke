@@ -56,7 +56,8 @@ def get_lyric(url):
             doc = BeautifulSoup(response.text, "html.parser")
             table = doc.select_one(".mw-parser-output table")
             if not table:
-                return "テーブルが見つかりませんでした", 404
+                print("テーブルが見つかりませんでした")
+                return ""
 
             trs = table.find_all("tr")
             for tr in trs[1:-1]:

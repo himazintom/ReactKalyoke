@@ -371,6 +371,7 @@ export const PitchPlayer = () => {
         case 2: // フォームにミスがないか確認
           if (!videoId) {
             setYoutubeUrlErrorMessage('入力されたURLはYouTubeのURLの形式ではありません'); // エラーメッセージを設定
+            setPrepareKaraokeStatus(0);
             return; // ここで終了して戻る
           } else {
             setYoutubeUrlErrorMessage(''); // エラーメッセージをクリア
@@ -418,11 +419,11 @@ export const PitchPlayer = () => {
                 await FormPost.updateLyricUpdateDate(videoId);
                 const result = await FormPost.updateLyricInDB(videoId, lyric);
               
-                if (result.error) { // エラーがあればエラーメッセージをセット
-                  setLyricFormUrlErrorMessage('歌詞の更新中にエラーが発生したようです: ' + result.error);
+                if (result === false) { // エラーがあればエラーメッセージをセット
+                  setLyricFormUrlErrorMessage('歌詞の更新中にエラーが発生したようです: ');
                 } else {
                   setLyricFormUrlErrorMessage('');
-              
+            
                   // timestampが無かったら、プレイヤーの歌詞リストを更新
                   if (!isTimestampLyric) {
                     setPlayerLyricList(
@@ -535,7 +536,6 @@ export const PitchPlayer = () => {
   const originalAudioRef = useRef(null);
   const videoContainerRef = useRef(null);
   const audioContextRef = useRef(null);
-  const originalGainNodeRef = useRef(null);
   const instGainNodeRef = useRef(null);
   const vocalGainNodeRef = useRef(null);
   const instAudioRef = useRef(null);

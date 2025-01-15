@@ -38,13 +38,14 @@ def separate_music():
         url = data.get("url")
         video_id = data.get("videoId")
         lyric = data.get("lyric")
+        print("data", data)
 
         url_non_list = remove_list_in_url(url)
         path = ""
         
         if not kalyoke_db.exists_video_id(video_id):  # 曲がデータベースに存在しない場合
             temp_movie_data = demucs.make_kalyoke(url_non_list, output_dir)
-
+            print("temp_movie_data", temp_movie_data)
             if temp_movie_data is None:
                 return jsonify({"error": "Failed to process video data"}), 500
 
@@ -65,6 +66,7 @@ def separate_music():
             kalyoke_db.add_to_videos_database(save_video_data)
 
         else:  # 曲がデータベースに存在する場合、歌詞を更新する
+            print("updatelyric", lyric)
             kalyoke_db.update_videos_database(video_id, lyric)
             kalyoke_db.update_video_lyric_update_date_from_video_id(video_id)
             path = kalyoke_db.get_video_folder_path_from_video_id(video_id)
@@ -138,11 +140,14 @@ def update_lyric_update_date():
     data = request.get_json()
     video_id = data.get("videoId")
 
-    if kalyoke_db.exists_video_id(video_id):
-        kalyoke_db.update_video_lyric_update_date_from_video_id(video_id)
-        return jsonify({"status": "success"}), 200
-    else:  # 曲が存在する場合、歌詞を更新する
-        return jsonify({"error": "Video not found"}), 404
+    try:    
+        if kalyoke_db.exists_video_id(video_id):
+            kalyoke_db.update_video_lyric_update_date_from_video_id(video_id)
+            return jsonify({"status": "success"}), 200
+        else:
+            return jsonify({"error": "Video not found"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/get_title", methods=["POST"])
 def get_title():

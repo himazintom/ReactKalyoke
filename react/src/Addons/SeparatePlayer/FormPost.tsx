@@ -1,13 +1,14 @@
 import axios from "axios";
+import { MusicList } from "./Upper/MusicList";
 
 // 環境変数の検証
 const apiUrl = process.env.REACT_APP_API_URL || "";
 const googleAPIKey = process.env.REACT_APP_GOOGLE_API_KEY || "";
 const searchEngineID = process.env.REACT_APP_SEARCH_ENGINE_ID || "";
 
-// if (!apiUrl || !googleAPIKey || !searchEngineID) {
-//   throw new Error("必要な環境変数が設定されていません。");
-// }
+if (!apiUrl || !googleAPIKey || !searchEngineID) {
+  throw new Error("必要な環境変数が設定されていません。");
+}
 
 // 言語設定
 const languages: Record<string, string> = { ja: "歌詞", en: "Lyric" };
@@ -159,6 +160,9 @@ export const separateMusic = async (
   videoId: string,
   lyric: string
 ): Promise<{ path: string; title: string; history: { title: string; videoId: string }[] } | null> => {
+  console.log("url", url);
+  console.log("videoId", videoId)
+  console.log("lyric", lyric)
   try {
     const response = await fetchData(`${apiUrl}/api/separate_music`, { url, videoId, lyric });
     return {
@@ -229,13 +233,13 @@ export const updateLyricInDB = async (videoId: string, lyric: string): Promise<b
     const response = await fetchData(`${apiUrl}/api/update_lyric`, { videoId, lyric });
     return response.success || false;
   } catch (error) {
-    console.error("Error updating lyric in DB:", error);
+    console.error("Error updating lyric:", error);
     return false;
   }
 };
 
 // 全ユーザーの履歴データを取得
-export const fetchEveryoneHistory = async (): Promise<{ title: string; videoId: string }[]> => {
+export const fetchEveryoneHistory = async (): Promise<MusicList[]> => {
   try {
     const response = await fetchData(`${apiUrl}/api/fetch_everyone_history`);
     if (!Array.isArray(response)) {
@@ -244,7 +248,7 @@ export const fetchEveryoneHistory = async (): Promise<{ title: string; videoId: 
     return response.map((item: any) => ({
       title: item.title,
       videoId: item.video_id,
-    }));
+    })) as MusicList[];
   } catch (error) {
     console.error("Error fetching everyone history:", error);
     return [];
@@ -254,7 +258,7 @@ export const fetchEveryoneHistory = async (): Promise<{ title: string; videoId: 
 // ランダムな音楽データの取得
 export const fetchRandomMusics = async (
   requestCount: number = 1
-): Promise<{ title: string; lyric: string; videoId: string }[]> => {
+): Promise<MusicList[]> => {
   try {
     const response = await fetchData(`${apiUrl}/api/fetch_random_music/${requestCount}`, {}, "GET");
     if (!Array.isArray(response)) {
@@ -264,7 +268,7 @@ export const fetchRandomMusics = async (
       title: item.title,
       lyric: item.lyric,
       videoId: item.video_id,
-    }));
+    })) as MusicList[];
   } catch (error) {
     console.error("Error fetching random musics:", error);
     return [];

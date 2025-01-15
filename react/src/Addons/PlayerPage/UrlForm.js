@@ -154,7 +154,7 @@ function UrlForm() {
     if (beforeVideoId === videoId) { // videoIdが変わってないとき
       if (isChangeLyricForm) { // 歌詞に変更があった時
         const result = await FormPost.updateLyricInDB(videoId, lyric);
-        if (result === "error") {
+        if (result === false) {
           setLyricFormUrlErrorMessage("歌詞の更新中にエラーが発生したようです");
         } else {
           setLyricFormUrlErrorMessage('歌詞が正常に更新されました');

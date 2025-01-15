@@ -338,6 +338,7 @@ export const Player = () => {
         case 2: // フォームにミスがないか確認
           if (!videoId) {
             setYoutubeUrlErrorMessage('入力されたURLはYouTubeのURLの形式ではありません'); // エラーメッセージを設定
+            setPrepareKaraokeStatus(0);
             return; // ここで終了して戻る
           } else {
             setYoutubeUrlErrorMessage(''); // エラーメッセージをクリア
@@ -385,8 +386,8 @@ export const Player = () => {
                 await FormPost.updateLyricUpdateDate(videoId);
                 const result = await FormPost.updateLyricInDB(videoId, lyric);
               
-                if (result.error) { // エラーがあればエラーメッセージをセット
-                  setLyricFormUrlErrorMessage('歌詞の更新中にエラーが発生したようです: ' + result.error);
+                if (result === false) { // エラーがあればエラーメッセージをセット
+                  setLyricFormUrlErrorMessage('歌詞の更新中にエラーが発生したようです: ');
                 } else {
                   setLyricFormUrlErrorMessage('');
               
@@ -401,7 +402,7 @@ export const Player = () => {
               } catch (error) {
                 console.error('Error updating lyric:', error);
                 setLyricFormUrlErrorMessage('サーバーへの接続中にエラーが発生しました');
-              }              
+              }
             }
           } else { // 新しく入力されたvideoIdのurlだったら
             setBeforeVideoId(videoId);
@@ -413,6 +414,7 @@ export const Player = () => {
               setIsMusicsReady(false);
   
               setYoutubeApiVideoId(videoId);
+              
               await initializeAudio(data['path']);
               setEveryoneHistory(data['history']);
               if (!isTimestampLyric) { // もし歌詞がタイムスタンプ式で事前処理がなされてなかったら
@@ -575,7 +577,7 @@ export const Player = () => {
     return () => {
       if (audioContextRef.current) {
         audioContextRef.current.close();
-      }
+      }-
       clearTimeout(controlTimeoutRef.current);
     };
   }, []);
@@ -912,8 +914,6 @@ export const Player = () => {
 
   useEffect(() =>{
     setIsKaraokeReady(isPlayerLyricReady && isYoutubeApiReady && isMusicsReady);
-
-  // },[isPlayerLyricReady, isInstWaveFormerReady, isVocalWaveFormerReady, isYoutubeApiReady, isMusicsReady])
   },[isPlayerLyricReady, isYoutubeApiReady, isMusicsReady])
 
   // useEffect(() =>{
@@ -1139,8 +1139,6 @@ export const Player = () => {
           }}
           style={{
             aspectRatio: '16/9',
-            top: isFullScreen ? '50%' : '0',
-            transform: isFullScreen ? 'translateY(-50%)' : 'none',
             position: 'absolute', // Ensure the positioning works correctly
             left: '0', // Align horizontally
             right: '0', // Align horizontally
