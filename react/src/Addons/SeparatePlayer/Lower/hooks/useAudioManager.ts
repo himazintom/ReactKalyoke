@@ -185,9 +185,9 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
       if(beforePathRef.current === path){//もし、同じパスならば、何もせずそのまま返す
         return true;
       }
+      beforePathRef.current = path;
 
       if(isPlaying) stopAudio();
-      beforePathRef.current = path;
 
       const folderPath = hostUrl + path;
 
@@ -200,7 +200,6 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
       } else {
         await createNormalModeAudios(folderPath);
       }
-      setIsPlaying(true);
     } catch (error) {
       console.error("Error initializing audio:", error);
     }
@@ -234,7 +233,6 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
   }, [instVolume, vocalVolume]);
 
   return {
-    isPlaying,
     instAudioRef,
     prepareAudio,
     playAudio,

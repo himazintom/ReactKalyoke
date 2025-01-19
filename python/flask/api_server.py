@@ -38,7 +38,6 @@ def separate_music():
         url = data.get("url")
         video_id = data.get("videoId")
         lyric = data.get("lyric")
-        print("data", data)
 
         url_non_list = remove_list_in_url(url)
         path = ""
@@ -67,10 +66,10 @@ def separate_music():
 
         else:  # 曲がデータベースに存在する場合、歌詞を更新する
             print("updatelyric", lyric)
-            kalyoke_db.update_videos_database(video_id, lyric)
-            kalyoke_db.update_video_lyric_update_date_from_video_id(video_id)
-            path = kalyoke_db.get_video_folder_path_from_video_id(video_id)
-            video_title = kalyoke_db.get_video_title_from_video_id(video_id)
+            kalyoke_db.update_videos_database(video_id, lyric)#歌詞を更新
+            kalyoke_db.update_video_lyric_update_date_from_video_id(video_id)#更新日時を更新
+            path = kalyoke_db.get_video_folder_path_from_video_id(video_id)#フォルダパスを取得
+            video_title = kalyoke_db.get_video_title_from_video_id(video_id)#タイトルを取得
 
         history_data = kalyoke_db.get_latest_video_ids()
         data = {"path": path, "history": history_data, "title": video_title}

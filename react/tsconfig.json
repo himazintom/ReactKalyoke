@@ -13,8 +13,9 @@
     "resolveJsonModule": true, // JSONファイルのインポートを許可
     "isolatedModules": true, // 各ファイルを個別のモジュールとして扱う
     "noEmit": true, // 出力ファイルを生成しない
-    "jsx": "react-jsx" // JSXの変換方式を指定（React 17以降の場合）
+    "jsx": "react-jsx", // JSXの変換方式を指定（React 17以降の場合）
+    "typeRoots": ["./node_modules/@types", "./youtube-override.d.ts"]
   },
-  "include": ["src"], // コンパイル対象のファイルやディレクトリ
+  "include": ["src", "youtube-override.d.ts", "youtube-override.d.ts"], // コンパイル対象のファイルやディレクトリ
   "exclude": ["node_modules", "dist"] // コンパイルから除外するファイルやディレクトリ
 }

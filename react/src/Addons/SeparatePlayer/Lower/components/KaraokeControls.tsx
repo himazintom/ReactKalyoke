@@ -9,6 +9,7 @@ import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
 import LoopIcon from '@mui/icons-material/Loop';
 import ShuffleIcon from '@mui/icons-material/Shuffle';
 import ClosedCaptionIcon from '@mui/icons-material/ClosedCaption';
+import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter';
 import GraphicEqIcon from '@mui/icons-material/GraphicEq';
 
 import ToggleButton from './ToggleButton';
@@ -61,7 +62,7 @@ const KaraokeControls: React.FC<KaraokeControlsProps> = ({
     {
       onClick: onToggleLyricCC,
       isActive: isLyricCC,
-      icon: <ClosedCaptionIcon />,
+      icon: <FormatAlignCenterIcon />,
       position: { bottom: '50px', left: '70px' },
     },
     {
@@ -74,19 +75,19 @@ const KaraokeControls: React.FC<KaraokeControlsProps> = ({
       onClick: onToggleFullScreen,
       isActive: isFullScreen,
       icon: isFullScreen ? <FullscreenExitIcon /> : <FullscreenIcon />,
-      position: { bottom: '55px', right: '10px' },
+      position: { bottom: '50px', right: '10px' },
     },
     {
       onClick: onToggleLoop,
       isActive: isLooping,
       icon: <LoopIcon />,
-      position: { bottom: '55px', right: '70px' },
+      position: { bottom: '50px', right: '70px' },
     },
     {
       onClick: onToggleShuffle,
       isActive: isShuffling,
       icon: <ShuffleIcon />,
-      position: { bottom: '55px', right: '130px' },
+      position: { bottom: '50px', right: '130px' },
     },
   ];
 

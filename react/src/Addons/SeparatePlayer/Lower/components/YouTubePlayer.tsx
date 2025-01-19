@@ -16,20 +16,31 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandles, YouTubePlayerProps
   ({ setDuration }, ref) => {
     const [youtubeApiVideoId, setYoutubePlayerVideoId] = useState('dQw4w9WgXcQ');
     const playerRef = useRef<YT.Player | null>(null);
+    const changeCCRef = useRef<boolean>(false);
+    const beforeCurrentTimeRef = useRef<number | null>(null);
     const prepareResolveRef = useRef<((ready: boolean) => void) | null>(null);
+    const youtubeCCResolveRef = useRef<((ready: boolean) => void) | null>(null);
 
     const handlePlayerReady = (event: { target: YT.Player }) => {
       //生成されたプレイヤーインスタンスを保持
       //※YouTubeコンポーネントには直接refを付けることはできない。
       //なぜならrefはYT.Playerではない。YT.Playerはonreadyのevent.targetとして渡される。
       playerRef.current = event.target;
-      event.target.setVolume(0);
-      setDuration(event.target.getDuration());
-
-      // もし prepareResolveRef に resolve 関数があれば、ここで true を返す
-      if (prepareResolveRef.current) {
-        prepareResolveRef.current(true);
-        prepareResolveRef.current = null; // 一度呼び出したらクリアする
+      if(changeCCRef.current && beforeCurrentTimeRef.current){
+        changeCCRef.current = false;
+        if(youtubeCCResolveRef.current){
+          youtubeCCResolveRef.current(true);
+          youtubeCCResolveRef.current = null;
+        }
+        seekYoutube(beforeCurrentTimeRef.current);
+      }else{
+        event.target.setVolume(0);
+        setDuration(event.target.getDuration());
+        // もし prepareResolveRef に resolve 関数があれば、ここで true を返す
+        if (prepareResolveRef.current) {
+          prepareResolveRef.current(true);
+          prepareResolveRef.current = null; // 一度呼び出したらクリアする
+        }
       }
     };
 
@@ -38,6 +49,7 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandles, YouTubePlayerProps
       if(youtubeApiVideoId === videoId) return true;//同じvideoIdだったら何もしない
       return new Promise((resolve) => {
         // resolve を格納しておき、onReady イベントで呼ぶ
+        stopYoutube();
         prepareResolveRef.current = resolve;
         setYoutubePlayerVideoId(videoId);
       });
@@ -85,12 +97,13 @@ export const YouTubePlayer = forwardRef<YouTubePlayerHandles, YouTubePlayerProps
             iv_load_policy: 3,
             rel: 0,
             mute: 1,
+            cc_load_policy: 0,//youtubeAPIのCCを表示しないように設定
           },
         }}
         onReady={handlePlayerReady}
         style={{
           aspectRatio: '16/9',
-          position: 'absolute',
+          position: 'relative',
           left: '0',
           right: '0',
         }}

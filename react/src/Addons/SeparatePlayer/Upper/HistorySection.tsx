@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Box, Typography, Link } from '@mui/material';
-import { MusicList } from './MusicList';
-import { HistoryList } from './FetchHistory';
+import HistoryList from '../types/HistoryList';
 
 interface SectionProps {
   title: string;
@@ -23,8 +22,8 @@ export const HistorySection: React.FC<SectionProps> = ({ title, history }) => {
       backgroundColor: '#1a1a1a',
       borderRadius: '8px',
       marginBottom: { xs: 2, md: 0 },
-      padding: '8px',
-      margin: '8px'
+      padding: '16px',
+      margin: '2px'
     }}>
       <Typography variant='h5' sx={{ marginBottom: 2 }}>{title}</Typography>
       {data.length > 0 ? (

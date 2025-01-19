@@ -13,11 +13,12 @@ import Cookies from 'js-cookie';
 import { YouTubePlayer, YouTubePlayerHandles } from './components/YouTubePlayer';
 import { LyricUI, LyricUIHandles } from './components/LyricUI';
 import { useAudioManager } from './hooks/useAudioManager';
+import { Waveforms, WaveformsHandles } from './components/Waveforms';
+
 
 import VolumeSliders from './components/VolumeSliders';
 import Overlay from './components/Overlay';
 import KaraokeControls from './components/KaraokeControls';
-
 import TimestampAndLyric from '../types/TimestampAndLyric';
 import VideoData from '../types/VideoData';
 
@@ -27,7 +28,7 @@ interface KaraokePlayerProps {
 }
 
 export interface KaraokePlayerHandles {
-  prepareKaraokePlayer: (videoData: VideoData) => Promise<boolean>;
+  prepareKaraokePlayer: (videoData: VideoData, isTimestamped: boolean) => Promise<boolean>;
 }
 
 export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps>(
@@ -35,6 +36,7 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
     const videoContainerRef = useRef<HTMLDivElement | null>(null);
     const youtubePlayerRef = useRef<YouTubePlayerHandles>(null);
     const lyricUIRef = useRef<LyricUIHandles>(null);
+    const waveformUIRef = useRef<WaveformsHandles>(null);
 
     // --- State 管理 ---
     const [displayKaraokePlayer, setDisplayKaraokePlayer] = useState(false);
@@ -62,6 +64,36 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
     const [isLooping, setIsLooping] = useState<boolean>(false);
     const [isShuffling, setIsShuffling] = useState<boolean>(false);
     const [isShufflePlaying, setIsShufflePlaying] = useState<boolean>(false);
+
+    const currentTimeRef = useRef(currentTime);//waveformsの非同期処理のため
+    const isPlayingRef = useRef(isPlaying);
+
+    useEffect(() => {
+      currentTimeRef.current = currentTime;
+    }, [currentTime]);
+
+    useEffect(() => {
+      isPlayingRef.current = isPlaying;
+    }, [isPlaying]);
+
+    //コントロールのCookieを読み込む
+    useEffect(() => {
+      const lyricCCValue = Cookies.get('lyricCC');
+      const isLyricCC = lyricCCValue === 'true'; // 文字列をBooleanに変換
+      setIsLyricCC(isLyricCC);
+  
+      const visibleWaveformValue = Cookies.get('visibleWaveform');
+      const isVisibleWaveform = visibleWaveformValue === 'true'; // 文字列をBooleanに変換
+      setIsVisibleWaveform(isVisibleWaveform);
+  
+      const loopValue = Cookies.get('loop');
+      const isLooping = loopValue === 'true'; // 文字列をBooleanに変換
+      setIsLooping(isLooping);
+      
+      const shuffleValue = Cookies.get('shuffle');
+      const isShuffling = shuffleValue === 'true'; // 文字列をBooleanに変換
+      setIsShuffling(isShuffling);
+    }, []);
 
     // 音楽終了時の処理
     const handleEndedMusic = useCallback(() => {
@@ -101,19 +133,33 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
 
     // --- useImperativeHandle ---
     useImperativeHandle(ref, () => ({
+      isTimestamped,
       prepareKaraokePlayer,
     }));
 
     // --- イベントハンドラ ---
-    async function prepareKaraokePlayer(videoData: VideoData) {
+    async function prepareKaraokePlayer(videoData: VideoData, isPlayerTimestamped: boolean) {
       try {
+        setIsTimestamped(isPlayerTimestamped);
+        // prepareWaveforms を非同期で実行(デカップリング)し、現在の処理フローをブロックしないようにする
+        setTimeout(() => {
+          prepareWaveforms(videoData.path).catch(error => {
+            console.error("prepareWaveforms エラー:", error);
+          });
+        }, 0);
+
         await Promise.all([
           prepareAudio(videoData.path),
           youtubePlayerRef.current?.prepareYouTubePlayer(videoData.videoId),
-          lyricUIRef.current?.prepareLyricUI(isTimestamped, videoData.timeStampAndLyricList),
+          lyricUIRef.current?.prepareLyricUI(isPlayerTimestamped, videoData.timeStampAndLyricList),
         ]);
-        if (!isShufflePlaying) {
+
+        // 続きの処理
+        if (isShufflePlaying) {
+          playAllAudio();
+        }else{
           if (beforePath.current !== videoData.path) {
+            stopAllAudio();
             setShowInitialOverlay(true);
           }
           beforePath.current = videoData.path;
@@ -128,6 +174,14 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
         return false;
       }
     }
+
+    const prepareWaveforms = async (audioPath: string) => {//もし、準備ができたときにすでに再生されていたら、現在の再生地点に波形を合わせる
+      await waveformUIRef.current?.prepareWaveforms(audioPath);
+      if (isPlayingRef.current) {
+        waveformUIRef.current?.playWaveforms();
+        syncSeekOfMusicAndWaveforms();
+      }
+    };
 
     const handleLooping = useCallback(() => {
       seekAllAudio(0);
@@ -147,27 +201,41 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
       setTimeout(() => {
         const time = instAudioRef.current?.currentTime;
         if (time !== undefined) {
-          youtubePlayerRef.current?.seekYoutube(time);
+          if(isPlaying){
+            youtubePlayerRef.current?.seekYoutube(time);
+          }
         }
       }, 1000);
     }, [instAudioRef, youtubePlayerRef]);
+
+    const syncSeekOfMusicAndWaveforms = useCallback(() => {
+      setTimeout(() => {
+        const time = instAudioRef.current?.currentTime;
+        if (time !== undefined) {
+          waveformUIRef.current?.seekWaveforms(time);
+        }
+      }, 1000);
+    }, [instAudioRef, waveformUIRef]);
 
     const playAllAudio = () => {
       setIsPlaying(true);
       playAudio();
       youtubePlayerRef.current?.playYoutube();
       syncSeekOfMusicAndYoutubeApi();
+      waveformUIRef.current?.playWaveforms();
     };
 
     const stopAllAudio = () => {
       setIsPlaying(false);
       stopAudio();
       youtubePlayerRef.current?.stopYoutube();
+      waveformUIRef.current?.stopWaveforms();
     };
 
     const seekAllAudio = (time: number) => {
       seekAudio(time);
       youtubePlayerRef.current?.seekYoutube(time);
+      waveformUIRef.current?.seekWaveforms(time);
     };
 
     // カーソルを動かさない場合にコントロールを自動で隠す
@@ -177,7 +245,7 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
       }
       controlTimeoutRef.current = setTimeout(() => {
         setIsShowControls(false);
-      }, 20000) as unknown as NodeJS.Timeout;
+      }, 5000) as unknown as NodeJS.Timeout;//5秒後に見えなくする
     };
 
     // 再生状況管理
@@ -270,7 +338,7 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
             padding: '0',
             width: { xs: '100%', md: '80%' },
             maxWidth: '1280px',
-            fontSize: { xs: '1.5rem', md: '2rem' },
+            fontSize: { xs: '1.0rem', md: '1.5rem' },
           }}
         >
           {karaokeTitle}
@@ -284,7 +352,6 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
             maxWidth: '1280px',
             aspectRatio: '16/9',
             height: 'auto',
-            paddingBottom: '4px',
             margin: '0 auto',
           }}
         >
@@ -302,7 +369,7 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
           <YouTubePlayer ref={youtubePlayerRef} setDuration={setDuration} />
 
           {/* 歌詞字幕 */}
-          <LyricUI ref={lyricUIRef} isLyricCC={isLyricCC}/>
+          <LyricUI ref={lyricUIRef} isLyricCC={isLyricCC} />
 
           {/* コントロールUIをまとめたコンポーネント */}
           <KaraokeControls
@@ -364,6 +431,9 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
               onSliderChange={resetControlTimeout}
             />
           )}
+
+          {/* 波形 */}
+          <Waveforms ref={waveformUIRef} isVisibleWaveforms={isVisibleWaveform} />
 
           {/* 透明なオーバーレイ: クリックしてコントロールを再表示させる */}
           {!isShowControls && (

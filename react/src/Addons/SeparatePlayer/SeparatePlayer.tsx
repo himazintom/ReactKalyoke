@@ -1,40 +1,34 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Box } from '@mui/material';
+import { Box, useMediaQuery, useTheme } from '@mui/material';
+import Cookies from 'js-cookie';
 
 import VideoData from './types/VideoData'
 import { PlayerForm } from './Upper/PlayerForm';
 import { HistorySection } from './Upper/HistorySection';
 import { useHistoryLists } from './Upper/FetchHistory';
 import * as FormPost from './FormPost';
-import { MusicList } from './Upper/MusicList';
 import TimestampAndLyric from './types/TimestampAndLyric';
 import { KaraokePlayer, KaraokePlayerHandles } from './Lower/KaraokePlayer';
+
 import { makeTimestampAndLyricList } from './Upper/TimeStamps';
+
+import HistoryList from './types/HistoryList';
 
 
 export const SeparatePlayer: React.FC<{ path: string }> = ({ path }) => {
+  const theme = useTheme();
+  const isMd = useMediaQuery(theme.breakpoints.up('md'));
+
   const validPath = path === "" || path === "/pitch" ? path : "";//""か"/pitch"以外は""として扱うようにするため
   const isPitchMode: boolean = validPath === "/pitch";
 
   const karaokePlayerRef = useRef<KaraokePlayerHandles>(null);
-  
-  const [isTimestamped, setIsTimestamped] = useState<boolean>(false);
-  const [isPlayerLyricReady, setIsPlayerLyricReady] = useState<boolean>(false);
-  const [isYoutubeApiReady, setIsYoutubeApiReady] = useState<boolean>(false);
-  const [isAudioReady, setIsAudioReady] = useState<boolean>(false);
-
-  const [isKaraokeReady, setIsKaraokeReady] = useState<boolean>(false);
-  const [isOnceKaraokeReady, setIsOnceKaraokeReady] = useState<boolean>(false);
-  useEffect(() =>{
-    setIsKaraokeReady(isPlayerLyricReady && isYoutubeApiReady && isAudioReady);
-  },[isPlayerLyricReady, isYoutubeApiReady, isAudioReady])
 
   const {
     everyoneHistory,
     yourHistory,
     recommendation,
-    setEveryoneHistory,
-    setYourHistory,
+    updateHistory
   } = useHistoryLists();
 
   const shufflePrepareKaraoke = async (): Promise<boolean> => {//ControlPlayerから呼び出される関数
@@ -52,19 +46,15 @@ export const SeparatePlayer: React.FC<{ path: string }> = ({ path }) => {
     try {
       const youtubeUrl: string = `https://www.youtube.com/watch?v=${videoId}`;
       const separateData = await FormPost.separateMusic(youtubeUrl, videoId, lyricStrings.join('\n')); // 曲情報を取得
-      console.log("separateData", separateData);
       if(separateData){//履歴を更新
-        console.log("separateDataはあったようだな");
         data = ({
           videoId: videoId,
           title: separateData.title,
           timeStampAndLyricList: formTimestampAndLyric,
           path: separateData.path
         }) as VideoData;
-        await karaokePlayerRef.current?.prepareKaraokePlayer(data);
-        setEveryoneHistory(separateData.history);
-        setYourHistory(separateData.history);
-        console.log("finish prepareKaraoke");
+        await karaokePlayerRef.current?.prepareKaraokePlayer(data, isTimestamped);
+        updateHistory(separateData.title, separateData.history[0].videoId);
       }
     } catch (error) {
       console.error("Error separating music:", error);
@@ -87,10 +77,13 @@ export const SeparatePlayer: React.FC<{ path: string }> = ({ path }) => {
           <Box sx={{ width: { xs: '100%', md: '50%' } }}>
             <PlayerForm onPrepareKaraoke={prepareKaraoke} />
           </Box>
-          <Box sx={{ width: { xs: '100%', md: '25%' } }}>
-            <HistorySection title='あなたの履歴' history={yourHistory} />
-            <HistorySection title='みんなの履歴' history={everyoneHistory} />
-          </Box>
+          {/* md以上の場合は、上部に履歴を表示する */}
+          {isMd && 
+            <Box sx={{ width: '25%' }}>
+              <HistorySection title='あなたの履歴' history={yourHistory} />
+              <HistorySection title='みんなの履歴' history={everyoneHistory} />
+            </Box>
+          }
         </Box>
       </Box>
       <KaraokePlayer 
@@ -98,6 +91,13 @@ export const SeparatePlayer: React.FC<{ path: string }> = ({ path }) => {
         isPitchMode={isPitchMode}
         shufflePrepareKaraoke={shufflePrepareKaraoke}
       />
+      {/* md未満の場合は、下部に履歴を表示する */}
+      {!isMd && 
+        <Box sx={{ width: '100%' }}>
+          <HistorySection title='あなたの履歴' history={yourHistory} />
+          <HistorySection title='みんなの履歴' history={everyoneHistory} />
+        </Box>
+      }
     </>
   );
 };

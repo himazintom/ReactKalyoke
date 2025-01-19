@@ -1,5 +1,5 @@
 import axios from "axios";
-import { MusicList } from "./Upper/MusicList";
+import { MusicList } from "./types/MusicList";
 
 // 環境変数の検証
 const apiUrl = process.env.REACT_APP_API_URL || "";
@@ -160,9 +160,6 @@ export const separateMusic = async (
   videoId: string,
   lyric: string
 ): Promise<{ path: string; title: string; history: { title: string; videoId: string }[] } | null> => {
-  console.log("url", url);
-  console.log("videoId", videoId)
-  console.log("lyric", lyric)
   try {
     const response = await fetchData(`${apiUrl}/api/separate_music`, { url, videoId, lyric });
     return {

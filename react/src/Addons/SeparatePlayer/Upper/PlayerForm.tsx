@@ -189,8 +189,8 @@ export const PlayerForm: React.FC<PlayerFormProps> = ({
         backgroundColor: '#1a1a1a',
         borderRadius: '8px',
         color: 'white',
-        padding: '8px',
-        margin: '8px'
+        padding: '16px',
+        margin: '2px'
       }}>
         <Box sx={{ marginBottom: 2 }}>
           <FormErrorMessages
@@ -199,7 +199,7 @@ export const PlayerForm: React.FC<PlayerFormProps> = ({
             lyricFormWarningMessage={lyricFormWarningMessage}
           />
           <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">YoutubeURL</Typography>
+            <Typography variant="h4">YoutubeURL</Typography>
             <Button
               variant='contained'
               onClick={resetForms}
@@ -225,7 +225,7 @@ export const PlayerForm: React.FC<PlayerFormProps> = ({
         </Box>
         <Box sx={{ marginBottom: 2 }}>
           <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h6">歌詞</Typography>
+            <Typography variant="h4">歌詞</Typography>
           </Box>
           <TextField
             fullWidth

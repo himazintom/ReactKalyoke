@@ -3,21 +3,32 @@
 import { useState, useEffect } from 'react';
 import * as FormPost from '../FormPost';
 import Cookies from 'js-cookie';
-
-export interface HistoryList {
-  videoId: string;
-  title: string;
-}
+import HistoryList from '../types/HistoryList';
 
 export const useHistoryLists = () => {
   const [everyoneHistory, setEveryoneHistory] = useState<HistoryList[]>([]);
   const [yourHistory, setYourHistory] = useState<HistoryList[]>([]);
   const [recommendation, setRecommendation] = useState<HistoryList[]>([]);
 
-  const reloadHistory = () => {
-    fetchYourHistory();
+  const updateHistory = (title: string, videoId: string) => {
+    updateYourHistory(title, videoId);
     fetchEveryoneHistory();
   };
+
+  const updateYourHistory = (title: string, videoId: string) => {
+    const historyData: HistoryList = { 
+      title: title,
+      videoId: videoId
+    };
+    // 同じvideoIdの履歴があれば削除
+    const updateYourHistory = yourHistory.filter(item => item.videoId !== videoId);
+    updateYourHistory.unshift(historyData);
+    if (updateYourHistory.length > 5) {
+      updateYourHistory.pop();
+    }
+    setYourHistory(updateYourHistory);
+    Cookies.set('yourHistory', JSON.stringify(updateYourHistory), { path: '/', expires: 31 });
+  }
 
   const fetchRecommendations = async (): Promise<void> => {
     try {
@@ -60,9 +71,6 @@ export const useHistoryLists = () => {
     everyoneHistory,
     yourHistory,
     recommendation,
-    setYourHistory,
-    setEveryoneHistory,
-    setRecommendation,
-    reloadHistory
+    updateHistory
   };
 };

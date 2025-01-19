@@ -106,10 +106,16 @@ export const Player = () => {
     setYoutubeUrl("");
     setLyric("");
   }
+
   const extractVideoId = (youtubeUrl) => {
     const regex = /^(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})(?:\S+)?$/;
     const match = youtubeUrl.match(regex);
-    return match ? match[1] : null;
+    if (!match) {
+      const regex2 = /https:\/\/himazi\.f5\.si\/search_id\/([\w-]{11})/;
+      const match2 = youtubeUrl.match(regex2);
+      return match2 ? match2[1] : null;
+    }
+    return match[1];
   }
 
   const searchAndSaveLyric = async (videoId, title, language) => {
