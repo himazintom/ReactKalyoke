@@ -336,15 +336,36 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
       }
     };
 
-    const toggleFullScreen = () => {
-      if (!isFullScreen) {
-        if (videoContainerRef.current?.requestFullscreen) {
-          videoContainerRef.current?.requestFullscreen();
+    const toggleFullScreen = async () => {
+      if (!document.fullscreenElement) {
+        try {
+          // フルスクリーンリクエスト
+          if (videoContainerRef.current?.requestFullscreen) {
+            await videoContainerRef.current.requestFullscreen();
+          }
+          // 画面の向きを横向きにロック（対応しているブラウザのみ）
+          if (window.screen.orientation && (window.screen.orientation as any).lock) {
+            (window.screen.orientation as any).lock('landscape').catch((err: any) => {
+              console.error('Orientation lock failed:', err);
+            });
+          }
+          // フルスクリーン時のサイズ変更：幅・高さを 100% にして、縦または横のどちらかが100%となるように調整
+          if (videoContainerRef.current) {
+            videoContainerRef.current.style.width = '100%';
+            videoContainerRef.current.style.height = '100%';
+          }
+          setIsFullScreen(true);
+        } catch (error) {
+          console.error('Failed to enter full screen:', error);
         }
-        setIsFullScreen(true);
       } else {
         if (document.exitFullscreen) {
-          document.exitFullscreen();
+          await document.exitFullscreen();
+        }
+        // フルスクリーン解除時に元のサイズに戻す（必要に応じて調整）
+        if (videoContainerRef.current) {
+          videoContainerRef.current.style.width = '';
+          videoContainerRef.current.style.height = '';
         }
         setIsFullScreen(false);
       }

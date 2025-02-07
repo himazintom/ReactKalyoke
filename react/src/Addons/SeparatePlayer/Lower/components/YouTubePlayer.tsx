@@ -67,6 +67,47 @@ export const YouTubePlayer = forwardRef<
     seekYoutube,
   }));
 
+  // fullscreen 時はウィンドウサイズから幅・高さを計算し16:9の比率を維持する
+  let containerStyle: React.CSSProperties;
+  if (isFullScreen) {
+    const windowWidth = window.innerWidth;
+    const windowHeight = window.innerHeight;
+    const aspectRatio = 16 / 9;
+    if (windowWidth / windowHeight > aspectRatio) {
+      // 高さが制限要因の場合
+      containerStyle = {
+        width: `${windowHeight * aspectRatio}px`,
+        height: `${windowHeight}px`,
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        position: 'absolute',
+        overflow: 'hidden',
+      };
+    } else {
+      // 幅が制限要因の場合
+      containerStyle = {
+        width: `${windowWidth}px`,
+        height: `${windowWidth / aspectRatio}px`,
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        position: 'absolute',
+        overflow: 'hidden',
+      };
+    }
+  } else {
+    containerStyle = {
+      aspectRatio: '16/9',
+      top: '0',
+      transform: 'none',
+      position: 'absolute',
+      left: '0',
+      right: '0',
+      overflow: 'hidden',
+    };
+  }
+
   return (
     <YouTube
       videoId={youtubeApiVideoId}
@@ -84,14 +125,7 @@ export const YouTubePlayer = forwardRef<
         },
       }}
       onReady={handlePlayerReady}
-      style={{
-        aspectRatio: '16/9',
-        top: isFullScreen ? '50%' : '0',
-        transform: isFullScreen ? 'translateY(-50%)' : 'none',
-        position: 'absolute',
-        left: '0',
-        right: '0',
-      }}
+      style={containerStyle}
     />
   );
 });
