@@ -3,7 +3,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 're
 import TimestampAndLyric from '../../types/TimestampAndLyric';
 
 export interface LyricUIHandles {
-  prepareLyricUI: (isTimestamped: boolean, timestampAndLyric: TimestampAndLyric[]) => void;
+  prepareLyricUI: (isTimestamped: boolean, timestampAndLyric: TimestampAndLyric[]) => Promise<void>;
   setCurrentLyricIndex: (index: number) => void;
   scrollToTop: () => void;
 }
@@ -20,13 +20,12 @@ export const LyricUI = forwardRef<LyricUIHandles, LyricUIProps>(({isLyricCC}, re
   const [isTimestamped, setIsTimestamped] = useState<boolean>(false);
   const [currentLyricIndex, setCurrentLyricIndex] = useState<number>(0);
 
-  const prepareLyricUI = async(isTimestamped: boolean, timestampAndLyric: TimestampAndLyric[]) => {
+  const prepareLyricUI = async (isTimestamped: boolean, timestampAndLyric: TimestampAndLyric[]) => {
     if(timestampAndLyric !== playerLyricList){
       scrollToTop();
       setPlayerLyricList(timestampAndLyric);
       setIsTimestamped(isTimestamped);
     }
-    return true;
   };
 
   useImperativeHandle(ref, () => ({
@@ -54,10 +53,10 @@ export const LyricUI = forwardRef<LyricUIHandles, LyricUIProps>(({isLyricCC}, re
         },
         left: '50%',
         top: {
-          xs: '10%',
-          sm: '15%',
-          md: '25%',
-          lg: '35%',
+          xs: '5%',
+          sm: '10%',
+          md: '20%',
+          lg: '30%',
         },
         transform: 'translateX(-50%)',
         pointerEvents: 'auto',

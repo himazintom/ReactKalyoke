@@ -396,7 +396,6 @@ export const Player = () => {
                   setLyricFormUrlErrorMessage('歌詞の更新中にエラーが発生したようです: ');
                 } else {
                   setLyricFormUrlErrorMessage('');
-              
                   // timestampが無かったら、プレイヤーの歌詞リストを更新
                   if (!isTimestampLyric) {
                     setPlayerLyricList(
@@ -1145,6 +1144,8 @@ export const Player = () => {
           }}
           style={{
             aspectRatio: '16/9',
+            top: isFullScreen ? '50%' : '0',
+            transform: isFullScreen ? 'translateY(-50%)' : 'none',
             position: 'absolute', // Ensure the positioning works correctly
             left: '0', // Align horizontally
             right: '0', // Align horizontally

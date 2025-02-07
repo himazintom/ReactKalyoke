@@ -3,6 +3,7 @@ import YouTube from 'react-youtube';
 
 interface YouTubePlayerProps {
   setDuration: (duration: number) => void;
+  isFullScreen: boolean;
 }
 
 export interface YouTubePlayerHandles {
@@ -12,104 +13,87 @@ export interface YouTubePlayerHandles {
   prepareYouTubePlayer: (videoId: string) => Promise<boolean>;
 }
 
-export const YouTubePlayer = forwardRef<YouTubePlayerHandles, YouTubePlayerProps>(
-  ({ setDuration }, ref) => {
-    const [youtubeApiVideoId, setYoutubePlayerVideoId] = useState('dQw4w9WgXcQ');
-    const playerRef = useRef<YT.Player | null>(null);
-    const changeCCRef = useRef<boolean>(false);
-    const beforeCurrentTimeRef = useRef<number | null>(null);
-    const prepareResolveRef = useRef<((ready: boolean) => void) | null>(null);
-    const youtubeCCResolveRef = useRef<((ready: boolean) => void) | null>(null);
+export const YouTubePlayer = forwardRef<
+  YouTubePlayerHandles,
+  YouTubePlayerProps
+>(({ setDuration, isFullScreen }, ref) => {
+  const [youtubeApiVideoId, setYoutubePlayerVideoId] = useState('dQw4w9WgXcQ');
+  const playerRef = useRef<YT.Player | null>(null);
+  const [isReady, setIsReady] = useState(false); // プレイヤーの準備状態を管理
+  const prepareResolveRef = useRef<((ready: boolean) => void) | null>(null);
 
-    const handlePlayerReady = (event: { target: YT.Player }) => {
-      //生成されたプレイヤーインスタンスを保持
-      //※YouTubeコンポーネントには直接refを付けることはできない。
-      //なぜならrefはYT.Playerではない。YT.Playerはonreadyのevent.targetとして渡される。
-      playerRef.current = event.target;
-      if(changeCCRef.current && beforeCurrentTimeRef.current){
-        changeCCRef.current = false;
-        if(youtubeCCResolveRef.current){
-          youtubeCCResolveRef.current(true);
-          youtubeCCResolveRef.current = null;
-        }
-        seekYoutube(beforeCurrentTimeRef.current);
-      }else{
-        event.target.setVolume(0);
-        setDuration(event.target.getDuration());
-        // もし prepareResolveRef に resolve 関数があれば、ここで true を返す
-        if (prepareResolveRef.current) {
-          prepareResolveRef.current(true);
-          prepareResolveRef.current = null; // 一度呼び出したらクリアする
-        }
-      }
-    };
+  const handlePlayerReady = (event: { target: YT.Player }) => {
+    playerRef.current = event.target;
+    setIsReady(true); // プレイヤーが準備完了
+    setDuration(event.target.getDuration());
 
-    // 親コンポーネントから呼ばれるメソッド: videoIdを更新して、準備完了を待つ
-    const prepareYouTubePlayer = async (videoId: string): Promise<boolean> => {
-      if(youtubeApiVideoId === videoId) return true;//同じvideoIdだったら何もしない
-      return new Promise((resolve) => {
-        // resolve を格納しておき、onReady イベントで呼ぶ
-        stopYoutube();
-        prepareResolveRef.current = resolve;
-        setYoutubePlayerVideoId(videoId);
-      });
-    };
+    if (prepareResolveRef.current) {
+      prepareResolveRef.current(true);
+      prepareResolveRef.current = null;
+    }
+  };
 
-    // 再生
-    const playYoutube = () => {
-      if (playerRef.current) {
-        playerRef.current.playVideo();
-      }
-    };
+  const prepareYouTubePlayer = async (videoId: string): Promise<boolean> => {
+    if (youtubeApiVideoId === videoId) return true; // 同じ videoId なら何もしない
+    return new Promise((resolve) => {
+      prepareResolveRef.current = resolve;
+      setIsReady(false); // 新しい動画の準備開始
+      setYoutubePlayerVideoId(videoId);
+    });
+  };
 
-    // 停止（ポーズ）
-    const stopYoutube = () => {
-      if (playerRef.current) {
-        playerRef.current.pauseVideo();
-      }
-    };
+  const playYoutube = () => {
+    if (isReady && playerRef.current) {
+      playerRef.current.playVideo();
+    }
+  };
 
-    // 指定した時刻にシーク
-    const seekYoutube = (time: number) => {
-      if (playerRef.current) {
-        playerRef.current.seekTo(time, true);
-      }
-    };
+  const stopYoutube = () => {
+    if (isReady && playerRef.current) {
+      playerRef.current.pauseVideo();
+    }
+  };
 
-    // 親コンポーネントで使えるメソッドを公開
-    useImperativeHandle(ref, () => ({
-      prepareYouTubePlayer,
-      playYoutube,
-      stopYoutube,
-      seekYoutube,
-    }));
+  const seekYoutube = (time: number) => {
+    if (isReady && playerRef.current) {
+      playerRef.current.seekTo(time, true);
+    }
+  };
 
-    return (
-      <YouTube
-        videoId={youtubeApiVideoId}
-        opts={{
-          width: '100%',
-          height: '100%',
-          playerVars: {
-            autoplay: 0,
-            controls: 0,
-            fs: 0,
-            iv_load_policy: 3,
-            rel: 0,
-            mute: 1,
-            cc_load_policy: 0,//youtubeAPIのCCを表示しないように設定
-          },
-        }}
-        onReady={handlePlayerReady}
-        style={{
-          aspectRatio: '16/9',
-          position: 'relative',
-          left: '0',
-          right: '0',
-        }}
-      />
-    );
-  }
-);
+  useImperativeHandle(ref, () => ({
+    prepareYouTubePlayer,
+    playYoutube,
+    stopYoutube,
+    seekYoutube,
+  }));
+
+  return (
+    <YouTube
+      videoId={youtubeApiVideoId}
+      opts={{
+        width: '100%',
+        height: '100%',
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          fs: 0,
+          iv_load_policy: 3,
+          rel: 0,
+          mute: 1,
+          cc_load_policy: 0, // YouTube API の CC を表示しない
+        },
+      }}
+      onReady={handlePlayerReady}
+      style={{
+        aspectRatio: '16/9',
+        top: isFullScreen ? '50%' : '0',
+        transform: isFullScreen ? 'translateY(-50%)' : 'none',
+        position: 'absolute',
+        left: '0',
+        right: '0',
+      }}
+    />
+  );
+});
 
 export default YouTubePlayer;

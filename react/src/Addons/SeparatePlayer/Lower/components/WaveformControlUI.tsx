@@ -16,13 +16,21 @@ interface WaveformControlUIProps {
 export const WaveformControlUI = forwardRef<WaveformControlUIHandles, WaveformControlUIProps>(({ barAlign }, ref) => {
   const waveformRef = useRef<HTMLDivElement | null>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
+  const currentLoadId = useRef<number>(0); // 読み込みリクエストのIDを管理するフラグ
   
   useEffect(() => {
     if (!['top', 'bottom', undefined].includes(barAlign)) {
       console.error(`Invalid value for barAlign: "${barAlign}". It must be 'top' or 'bottom' or 'center'.`);
       barAlign = 'top'; // デフォルト値にフォールバック
     }
-  }, [barAlign]);
+
+    return () => {
+      // コンポーネントのアンマウント時にWaveSurferを破棄
+      if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
+      }
+    };
+  }, []);
 
   const onReadyWaveform = () => {
     wavesurferRef.current?.setVolume(0); // ミュートにする
@@ -48,14 +56,18 @@ export const WaveformControlUI = forwardRef<WaveformControlUIHandles, WaveformCo
   }
 
   const prepareWaveform = async (audioPath: string) => {
+    currentLoadId.current += 1; // 新しい読み込みリクエストのIDをインクリメント
+    const loadId = currentLoadId.current;
+
     try {
+      // 既存のWaveSurferインスタンスを破棄
+      if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
+        wavesurferRef.current = null;
+      }
+
       if (waveformRef.current) {
         waveformRef.current.style.transform = 'translateX(0%)'; // リセット
-
-        // 既存のWaveSurferインスタンスを破棄
-        if (wavesurferRef.current) {
-          wavesurferRef.current.destroy();
-        }
 
         wavesurferRef.current = WaveSurfer.create({
           container: waveformRef.current,
@@ -73,10 +85,32 @@ export const WaveformControlUI = forwardRef<WaveformControlUIHandles, WaveformCo
           interact: false,
         });
 
-        // オーディオファイルを非同期でロード
+        // エラーハンドリングを追加
+        wavesurferRef.current.on('error', (e) => {
+          console.error('prepareWaveform エラー:', e);
+        });
+
+        // オーディオファイルをロード
         await new Promise<void>((resolve, reject) => {
-          wavesurferRef.current?.once('ready', () => resolve());
-          wavesurferRef.current?.once('error', (e) => reject(e));
+          if (loadId !== currentLoadId.current) {
+            // 新しいリクエストが開始されている場合は無視
+            return reject(new Error('新しい読み込みリクエストが開始されました'));
+          }
+
+          const handleReady = () => {
+            if (loadId === currentLoadId.current) {
+              resolve();
+            }
+          };
+
+          const handleError = (e: any) => {
+            if (loadId === currentLoadId.current) {
+              reject(e);
+            }
+          };
+
+          wavesurferRef.current?.once('ready', handleReady);
+          wavesurferRef.current?.once('error', handleError);
           wavesurferRef.current?.load(audioPath);
         });
 
@@ -87,7 +121,11 @@ export const WaveformControlUI = forwardRef<WaveformControlUIHandles, WaveformCo
         }
       }
     } catch (error) {
-      console.error('prepareWaveform エラー:', error);
+      if ((error as any).message === '新しい読み込みリクエストが開始されました') {
+        console.log('古い読み込みリクエストがキャンセルされました');
+      } else {
+        console.error('prepareWaveform エラー:', error);
+      }
     }
   };
 
@@ -111,9 +149,7 @@ export const WaveformControlUI = forwardRef<WaveformControlUIHandles, WaveformCo
 
   const seekWaveform = (timeInSeconds: number) => {
     if (wavesurferRef.current) {
-      const duration = wavesurferRef.current.getDuration();
-      const progress = timeInSeconds / duration;
-      wavesurferRef.current.seekTo(progress); // 特定の秒数にシークする
+      wavesurferRef.current.seekTo(timeInSeconds / wavesurferRef.current.getDuration());
     }
   }
 

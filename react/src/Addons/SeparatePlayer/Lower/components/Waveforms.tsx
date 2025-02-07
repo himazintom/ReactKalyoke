@@ -1,4 +1,4 @@
-import React, { forwardRef, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef, useState } from 'react';
 import WaveformControlUI, { WaveformControlUIHandles } from './WaveformControlUI';
 import { Box } from '@mui/material';
 
@@ -20,6 +20,7 @@ export const Waveforms = forwardRef<WaveformsHandles, WaveformsProps>(({ isVisib
 
   const beforePath = useRef<string>('');
   const isWaveformsReady = useRef(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useImperativeHandle(ref, () => ({
     prepareWaveforms,
@@ -47,6 +48,7 @@ export const Waveforms = forwardRef<WaveformsHandles, WaveformsProps>(({ isVisib
 
   const playWaveforms = () => {
     if (isWaveformsReady.current) {
+      setIsPlaying(true);
       upperWaveformRef.current?.playWaveform();
       lowerWaveformRef.current?.playWaveform();
     }
@@ -54,6 +56,7 @@ export const Waveforms = forwardRef<WaveformsHandles, WaveformsProps>(({ isVisib
 
   const pauseWaveforms = () => {
     if (isWaveformsReady.current) {
+      setIsPlaying(false);
       upperWaveformRef.current?.pauseWaveform();
       lowerWaveformRef.current?.pauseWaveform();
     }
@@ -61,8 +64,11 @@ export const Waveforms = forwardRef<WaveformsHandles, WaveformsProps>(({ isVisib
 
   const stopWaveforms = () => {
     if (isWaveformsReady.current) {
-      upperWaveformRef.current?.stopWaveform();
-      lowerWaveformRef.current?.stopWaveform();
+      if(isPlaying){
+        setIsPlaying(false);
+        upperWaveformRef.current?.stopWaveform();
+        lowerWaveformRef.current?.stopWaveform();
+      }
     }
   };
 

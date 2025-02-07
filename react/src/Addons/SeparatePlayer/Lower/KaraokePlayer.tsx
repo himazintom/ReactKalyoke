@@ -21,6 +21,7 @@ import Overlay from './components/Overlay';
 import KaraokeControls from './components/KaraokeControls';
 import TimestampAndLyric from '../types/TimestampAndLyric';
 import VideoData from '../types/VideoData';
+import { PitchShift } from 'tone';
 
 interface KaraokePlayerProps {
   isPitchMode: boolean;
@@ -64,9 +65,42 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
     const [isLooping, setIsLooping] = useState<boolean>(false);
     const [isShuffling, setIsShuffling] = useState<boolean>(false);
     const [isShufflePlaying, setIsShufflePlaying] = useState<boolean>(false);
+    const pitchShiftRef = useRef<PitchShift | null>(null);
 
     const currentTimeRef = useRef(currentTime);//waveformsの非同期処理のため
     const isPlayingRef = useRef(isPlaying);
+
+    // isLooping と isShuffling の最新状態を保持するための ref を用意
+    const latestIsLooping = useRef(isLooping);
+    const latestIsShuffling = useRef(isShuffling);
+
+    // 状態が変わるたびに ref を更新
+    useEffect(() => {
+      latestIsLooping.current = isLooping;
+    }, [isLooping]);
+
+    useEffect(() => {
+      latestIsShuffling.current = isShuffling;
+    }, [isShuffling]);
+
+    // handleEndedMusic の関数自体は一度だけ生成して固定する
+    const handleEndedMusic = useCallback(async () => {
+      console.log("handleEndedMusic!!");
+      try {
+        if (latestIsLooping.current) {
+          console.log("handleLooping!!");
+          handleLooping();
+        } else if (latestIsShuffling.current) {
+          console.log("handleShuffling!!");
+          await handleShuffling();
+        } else {
+          console.log("stopAllAudio!!");
+          stopAllAudio();
+        }
+      } catch (error) {
+        console.error("handleEndedMusic error", error);
+      }
+    }, []); // 依存配列を空にすることで関数自身は固定される
 
     useEffect(() => {
       currentTimeRef.current = currentTime;
@@ -95,24 +129,112 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
       setIsShuffling(isShuffling);
     }, []);
 
-    // 音楽終了時の処理
-    const handleEndedMusic = useCallback(() => {
-      if (isLooping) {
-        handleLooping();
-      } else if (isShuffling) {
-        handleShuffling();
-      }
+    
+    // onToggleLoop の修正
+    const handleToggleLoop = () => {
+      console.log("handleToggleLoop!!");
+      setIsLooping((prevIsLooping) => {
+        const newIsLooping = !prevIsLooping;
+        Cookies.set('loop', String(newIsLooping), { path: '/', expires: 31 });
+
+
+        if (newIsLooping) {
+          setIsShuffling(false);
+          Cookies.set('shuffle', 'false', { path: '/', expires: 31 });
+        }
+        console.log("newIsLooping", newIsLooping);
+        return newIsLooping;
+      });
+    };
+
+
+    // onToggleShuffle の修正
+    const handleToggleShuffle = () => {
+      console.log("handleToggleShuffle!!");
+      setIsShuffling((prevIsShuffling) => {
+        const newIsShuffling = !prevIsShuffling;
+        Cookies.set('shuffle', String(newIsShuffling), { path: '/', expires: 31 });
+
+
+        if (newIsShuffling) {
+          setIsLooping(false);
+          Cookies.set('loop', 'false', { path: '/', expires: 31 });
+        }
+        console.log("newIsShuffling", newIsShuffling);
+        return newIsShuffling;
+      });
+    }
+
+    useEffect(() => {
+      console.log("UseEffect isLooping", isLooping);
+      console.log("UseEffect isShuffling", isShuffling);
     }, [isLooping, isShuffling]);
 
+
+    const handleLooping = useCallback(() => {
+      seekAllAudio(0);
+      playAllAudio();
+      setIsPlaying(true);
+      lyricUIRef.current?.scrollToTop();
+
+      syncSeekOfMusicAndYoutubeApi();
+    }, []);
+
+    const handleShuffling = useCallback(async () => {
+      setIsShufflePlaying(true);
+      try {
+        const result = await shufflePrepareKaraoke();
+        if (result) {
+          playAllAudio();
+        } else {
+          setIsShufflePlaying(false);
+        }
+      } catch (error) {
+        setIsShufflePlaying(false);
+      }
+    }, [shufflePrepareKaraoke]);
+
+    const syncSeekOfMusicAndWaveforms = useCallback(() => {
+      setTimeout(() => {
+        const time = audioRef.current?.currentTime;
+        if (time !== undefined) {
+          waveformUIRef.current?.seekWaveforms(time);
+        }
+      }, 1000);
+    }, [isPlaying]);
+
+    const playAllAudio = () => {
+      setIsPlaying(true);
+      playAudio();
+      youtubePlayerRef.current?.playYoutube();
+      syncSeekOfMusicAndYoutubeApi();
+      waveformUIRef.current?.playWaveforms();
+    };
+
+    const stopAllAudio = () => {
+      setIsPlaying(false);
+      stopAudio();
+      youtubePlayerRef.current?.stopYoutube();
+      waveformUIRef.current?.pauseWaveforms();
+    };
+
+    const seekAllAudio = (time: number) => {
+      seekAudio(time);
+      youtubePlayerRef.current?.seekYoutube(time);
+      waveformUIRef.current?.seekWaveforms(time);
+    };
+    
     // --- Audio の準備 ---
     const {
-      instAudioRef,
+      AudioRef: audioRef,
+      currentPitch,
       prepareAudio,
       playAudio,
       stopAudio,
       seekAudio,
       setInstVolume: setAudioInstVolume,
       setVocalVolume: setAudioVocalVolume,
+      handlePitchChange,
     } = useAudioManager({ isPitchMode, handleEndedMusic });
 
     // --- 初期設定 ---
@@ -141,19 +263,18 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
     async function prepareKaraokePlayer(videoData: VideoData, isPlayerTimestamped: boolean) {
       try {
         setIsTimestamped(isPlayerTimestamped);
+
+        await prepareAudio(videoData.path);
+        await youtubePlayerRef.current?.prepareYouTubePlayer(videoData.videoId);
+        await lyricUIRef.current?.prepareLyricUI(isPlayerTimestamped, videoData.timeStampAndLyricList);
+
         // prepareWaveforms を非同期で実行(デカップリング)し、現在の処理フローをブロックしないようにする
         setTimeout(() => {
           prepareWaveforms(videoData.path).catch(error => {
             console.error("prepareWaveforms エラー:", error);
           });
         }, 0);
-
-        await Promise.all([
-          prepareAudio(videoData.path),
-          youtubePlayerRef.current?.prepareYouTubePlayer(videoData.videoId),
-          lyricUIRef.current?.prepareLyricUI(isPlayerTimestamped, videoData.timeStampAndLyricList),
-        ]);
-
+        
         // 続きの処理
         if (isShufflePlaying) {
           playAllAudio();
@@ -176,67 +297,25 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
     }
 
     const prepareWaveforms = async (audioPath: string) => {//もし、準備ができたときにすでに再生されていたら、現在の再生地点に波形を合わせる
+      console.log("prepareWaveforms");
       await waveformUIRef.current?.prepareWaveforms(audioPath);
       if (isPlayingRef.current) {
+        console.log("prepareWaveforms playWaveforms");
         waveformUIRef.current?.playWaveforms();
         syncSeekOfMusicAndWaveforms();
       }
     };
 
-    const handleLooping = useCallback(() => {
-      seekAllAudio(0);
-      playAllAudio();
-      setIsPlaying(true);
-      lyricUIRef.current?.scrollToTop();
-      syncSeekOfMusicAndYoutubeApi();
-    }, []);
-
-    const handleShuffling = useCallback(async () => {
-      setIsShufflePlaying(true);
-      await shufflePrepareKaraoke();
-      playAllAudio();
-    }, []);
-
     const syncSeekOfMusicAndYoutubeApi = useCallback(() => {
       setTimeout(() => {
-        const time = instAudioRef.current?.currentTime;
+        const time = audioRef.current?.currentTime;
         if (time !== undefined) {
           if(isPlaying){
             youtubePlayerRef.current?.seekYoutube(time);
           }
         }
       }, 1000);
-    }, [instAudioRef, youtubePlayerRef]);
-
-    const syncSeekOfMusicAndWaveforms = useCallback(() => {
-      setTimeout(() => {
-        const time = instAudioRef.current?.currentTime;
-        if (time !== undefined) {
-          waveformUIRef.current?.seekWaveforms(time);
-        }
-      }, 1000);
-    }, [instAudioRef, waveformUIRef]);
-
-    const playAllAudio = () => {
-      setIsPlaying(true);
-      playAudio();
-      youtubePlayerRef.current?.playYoutube();
-      syncSeekOfMusicAndYoutubeApi();
-      waveformUIRef.current?.playWaveforms();
-    };
-
-    const stopAllAudio = () => {
-      setIsPlaying(false);
-      stopAudio();
-      youtubePlayerRef.current?.stopYoutube();
-      waveformUIRef.current?.stopWaveforms();
-    };
-
-    const seekAllAudio = (time: number) => {
-      seekAudio(time);
-      youtubePlayerRef.current?.seekYoutube(time);
-      waveformUIRef.current?.seekWaveforms(time);
-    };
+    }, [isPlaying]);
 
     // カーソルを動かさない場合にコントロールを自動で隠す
     const resetControlTimeout = () => {
@@ -275,7 +354,7 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
     useEffect(() => {
       const interval = setInterval(() => {
         if (isPlaying) {
-          const time = instAudioRef.current?.currentTime;
+          const time = audioRef.current?.currentTime;
           if (time !== undefined) {
             setCurrentTime(time);
           }
@@ -285,11 +364,18 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
         }
       }, 100);
 
-      return () => clearInterval(interval);
-    }, [isPlaying, isTimestamped]);
+      const syncInterval = setInterval(() => {
+        syncSeekOfMusicAndYoutubeApi();
+      }, 10000);//10秒ごとに同期
+
+      return () => {
+        clearInterval(interval);
+        clearInterval(syncInterval);
+      };
+    }, [isPlaying, isTimestamped, syncSeekOfMusicAndYoutubeApi]);
 
     const updatePlayerTimestampLyric = () => {
-      const time = instAudioRef.current?.currentTime;
+      const time = audioRef.current?.currentTime;
       if (time !== undefined) {
         setCurrentTime(time);
         const currentIndex = timestampAndLyricList.findIndex(
@@ -317,6 +403,14 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
         window.removeEventListener('blur', handleBlur);
       };
     }, [syncSeekOfMusicAndYoutubeApi]); // 依存配列に syncSeekOfMusicAndYoutubeApi を追加
+
+    useEffect(() => {
+      return () => {
+        youtubePlayerRef.current = null;
+        lyricUIRef.current = null;
+        waveformUIRef.current = null;
+      };
+    }, []);
 
     // --- JSX ---
     return (
@@ -366,13 +460,14 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
           />
 
           {/* YouTubePlayer */}
-          <YouTubePlayer ref={youtubePlayerRef} setDuration={setDuration} />
+          <YouTubePlayer ref={youtubePlayerRef} setDuration={setDuration} isFullScreen={isFullScreen} />
 
           {/* 歌詞字幕 */}
           <LyricUI ref={lyricUIRef} isLyricCC={isLyricCC} />
 
           {/* コントロールUIをまとめたコンポーネント */}
           <KaraokeControls
+            isPitchMode={isPitchMode}
             isShowControls={isShowControls}
             isPlaying={isPlaying}
             isFullScreen={isFullScreen}
@@ -382,6 +477,7 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
             isShuffling={isShuffling}
             currentTime={currentTime}
             duration={duration}
+            currentPitch={currentPitch}
             onPlayPause={handlePlayPause}
             onToggleFullScreen={toggleFullScreen}
             onToggleLyricCC={() => {
@@ -390,25 +486,16 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
             }}
             onToggleWaveform={() => {
               Cookies.set('visibleWaveform', String(!isVisibleWaveform), { path: '/', expires: 31 });
-              setIsVisibleWaveform(!isVisibleWaveform);
+              setIsVisibleWaveform(!isVisibleWaveform); 
             }}
-            onToggleLoop={() => {
-              Cookies.set('loop', String(!isLooping), { path: '/', expires: 31 });
-              Cookies.set('shuffle', String(false), { path: '/', expires: 31 });
-              setIsLooping(!isLooping);
-              if (isShuffling) setIsShuffling(false);
-            }}
-            onToggleShuffle={() => {
-              Cookies.set('loop', String(false), { path: '/', expires: 31 });
-              Cookies.set('shuffle', String(!isShuffling), { path: '/', expires: 31 });
-              setIsShuffling(!isShuffling);
-              if (isLooping) setIsLooping(false);
-            }}
+            onToggleLoop={handleToggleLoop}
+            onToggleShuffle={handleToggleShuffle}
             onSeekChange={(event, newValue) => {
               setCurrentTime(newValue as number);
               seekAllAudio(newValue as number);
             }}
             onMouseMove={resetControlTimeout}
+            handlePitchChange={handlePitchChange}
           />
 
           {/* ボリュームスライダー */}

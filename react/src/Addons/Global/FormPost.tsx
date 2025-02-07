@@ -227,7 +227,7 @@ export const updateLyricUpdateDate = async (videoId: string) => {
 export const updateLyricInDB = async (videoId: string, lyric: string): Promise<boolean> => {
   try {
     const response = await fetchData(`${apiUrl}/api/update_lyric`, { videoId, lyric });
-    return response.success || false;
+    return response.status === "success" || false
   } catch (error) {
     console.error("Error updating lyric in DB:", error);
     return false;

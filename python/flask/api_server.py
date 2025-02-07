@@ -86,11 +86,14 @@ def update_lyric():
     data = request.get_json()
     video_id = data.get("videoId")
     lyric = data.get("lyric")
-    if kalyoke_db.exists_video_id(video_id):  # もし入力された曲がデータベースに無い場合
-        kalyoke_db.update_videos_database(video_id, lyric)
-        return jsonify({"status": "success"}), 200
-    else:  # 曲が存在する場合、歌詞を更新する
-        return jsonify({"error": "Video not found"}), 404
+    try:
+        if kalyoke_db.exists_video_id(video_id):  # もし入力された曲がデータベースに無い場合
+            kalyoke_db.update_videos_database(video_id, lyric)
+            return jsonify({"status": "success"}), 200
+        else:  # 曲が存在しない場合、特定のメッセージを返す
+            return jsonify({"status": "success"}), 200
+    except Exception as e:
+        return jsonify({"status": "error"}), 404  
 
 @app.route("/api/search_video_id/<video_id>")
 def search_video_id(video_id):

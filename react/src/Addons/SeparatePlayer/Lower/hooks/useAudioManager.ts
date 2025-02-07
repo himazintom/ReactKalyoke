@@ -28,6 +28,7 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
   const pitchVocalGainNodeRef = useRef<Tone.Gain | null>(null);
   const instPitchShiftRef = useRef<Tone.PitchShift | null>(null);
   const vocalPitchShiftRef = useRef<Tone.PitchShift | null>(null);
+  const [pitchValue, setPitchValue] = useState<number>(0);
 
   const [instVolume, setInstVolume] = useState(100);
   const [vocalVolume, setVocalVolume] = useState(10);
@@ -49,11 +50,27 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
   };
 
   function playAudio() {
-    if (originalAudioRef.current) originalAudioRef.current.play();
-    if (instAudioRef.current) instAudioRef.current.play();
-    if (vocalAudioRef.current) vocalAudioRef.current.play();
-    if (pitchInstAudioRef.current) pitchInstAudioRef.current.start();
-    if (pitchVocalAudioRef.current) pitchVocalAudioRef.current.start();
+    if (originalAudioRef.current) {
+      originalAudioRef.current.play();
+    }
+    if (instAudioRef.current) {
+      instAudioRef.current.play();
+    }
+    if (vocalAudioRef.current) {
+      vocalAudioRef.current.play();
+    }
+    if (pitchInstAudioRef.current){
+      const currentTime = originalAudioRef.current?.currentTime;
+      if (currentTime !== undefined) {
+        pitchInstAudioRef.current.start(undefined, currentTime);
+      }
+    }
+    if (pitchVocalAudioRef.current){
+      const currentTime = originalAudioRef.current?.currentTime;
+      if (currentTime !== undefined) {
+        pitchVocalAudioRef.current.start(undefined, currentTime);
+      }
+    }
     setIsPlaying(true);
   }
 
@@ -82,21 +99,35 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
   }
 
   useEffect(() => {//音量が変更されて、関数が更新されてからイベントを登録しなおし
+    //console.log("useEffect handleEndedMusic Changed");
     if(instAudioRef.current){
       instAudioRef.current.removeEventListener('ended', handleEndedMusic);
       instAudioRef.current.addEventListener('ended', handleEndedMusic);
     }
-
+    if(originalAudioRef.current){
+      originalAudioRef.current.removeEventListener('ended', handleEndedMusic);
+      originalAudioRef.current.addEventListener('ended', handleEndedMusic);
+    }
     // クリーンアップでイベントリスナーを削除
     return () => {
       if (instAudioRef.current) {
         instAudioRef.current.removeEventListener('ended', handleEndedMusic);
       }
+      if (originalAudioRef.current) {
+        originalAudioRef.current.removeEventListener('ended', handleEndedMusic);
+      }
     };
   }, [handleEndedMusic]);
 
+
   async function createNormalModeAudios(folderPath: string) {
     try {
+      // 既存の Audio オブジェクトがあればクリーンアップ
+      if (instAudioRef.current) {
+        instAudioRef.current.removeEventListener("ended", handleEndedMusic);
+        instGainNodeRef.current?.disconnect();
+      }
+
       const context = audioContextRef.current!;
       const instAudio = new Audio(`${folderPath}/no_vocals.mp3`);
       const vocalAudio = new Audio(`${folderPath}/vocals.mp3`);
@@ -126,7 +157,6 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
       vocalGainNode.gain.value = calculateVolume(vocalVolume);
       vocalAudio.loop = false;
 
-      vocalAudio.addEventListener("ended", handleEndedMusic);
       vocalAudioRef.current = vocalAudio;
       vocalGainNodeRef.current = vocalGainNode;
     } catch (error) {
@@ -148,14 +178,18 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
       originalAudioRef.current = originalAudio;
 
       const instPlayer = new Tone.Player({ url: "", loop: false, autostart: false });
-      const instPitchShift = new Tone.PitchShift();
+      const instPitchShift = new Tone.PitchShift({pitch: 0});
       const instGainNode = new Tone.Gain(calculateVolume(instVolume));
-      instPlayer.connect(instPitchShift).connect(instGainNode).toDestination();
+      instPlayer.connect(instPitchShift);
+      instPitchShift.connect(instGainNode);
+      instGainNode.toDestination();
 
       const vocalPlayer = new Tone.Player({ url: "", loop: false, autostart: false });
       const vocalPitchShift = new Tone.PitchShift({pitch: 0});
       const vocalGainNode = new Tone.Gain(calculateVolume(vocalVolume));
-      vocalPlayer.connect(vocalPitchShift).connect(vocalGainNode).toDestination();
+      vocalPlayer.connect(vocalPitchShift);
+      vocalPitchShift.connect(vocalGainNode);
+      vocalGainNode.toDestination();
 
       await Promise.all([
         new Promise<void>((resolve) =>
@@ -192,6 +226,7 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
       const folderPath = hostUrl + path;
 
       if (isPitchMode) {
+        setPitchValue(0);
         if (Tone.getContext().state !== "running") {
           await Tone.start();
         }
@@ -230,16 +265,38 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
     if (vocalGainNodeRef.current) {
       vocalGainNodeRef.current.gain.value = calculateVolume(vocalVolume);
     }
+    if(pitchInstGainNodeRef.current){
+      pitchInstGainNodeRef.current.gain.value = calculateVolume(instVolume);
+    }
+    if(pitchVocalGainNodeRef.current){
+      pitchVocalGainNodeRef.current.gain.value = calculateVolume(vocalVolume);
+    }
   }, [instVolume, vocalVolume]);
 
+  const handlePitchChange = (change: number) => {
+    setPitchValue((prevPitch) => {
+      const newPitch = prevPitch + change;
+      if(instPitchShiftRef.current){
+        instPitchShiftRef.current.pitch = newPitch;
+      }
+      if(vocalPitchShiftRef.current){
+        vocalPitchShiftRef.current.pitch = newPitch;
+      }
+      return newPitch;
+    });
+  };
+
   return {
-    instAudioRef,
+    AudioRef: isPitchMode ? originalAudioRef : instAudioRef,
+    currentPitch: pitchValue,
     prepareAudio,
     playAudio,
     stopAudio,
     seekAudio,
     setInstVolume,
     setVocalVolume,
+    handlePitchChange,
     // 他に必要なものがあれば追加
   };
 };
+
