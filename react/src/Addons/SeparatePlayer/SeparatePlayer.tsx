@@ -7,13 +7,8 @@ import { PlayerForm } from './Upper/PlayerForm';
 import { HistorySection } from './Upper/HistorySection';
 import { useHistoryLists } from './Upper/FetchHistory';
 import * as FormPost from './FormPost';
-import TimestampAndLyric from './types/TimestampAndLyric';
 import { KaraokePlayer, KaraokePlayerHandles } from './Lower/KaraokePlayer';
-
 import { makeTimestampAndLyricList } from './Upper/TimeStamps';
-
-import HistoryList from './types/HistoryList';
-
 
 export const SeparatePlayer: React.FC<{ path: string }> = ({ path }) => {
   const theme = useTheme();

@@ -1,9 +1,9 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Box, Button, Typography, TextField } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 import * as FormPost from '../FormPost';
 import { FormErrorMessages } from './FormErrorMessages';
-
+import Cookies from 'js-cookie';
 
 interface PlayerFormProps {
   onPrepareKaraoke: (videoId: string, lyric: string) => Promise<void>;
@@ -30,14 +30,35 @@ export const PlayerForm: React.FC<PlayerFormProps> = ({
   const [lyricFormErrorMessage, setLyricFormUrlErrorMessage] = useState<string>('');
   const [lyricFormWarningMessage, setLyricFormUrlWarningMessage] = useState<string[]>([]);
 
-  const resetForms = useCallback(() => {
+  useEffect(() => {
+    const fetchLastSongData = async () => {
+      const yourHistory = JSON.parse(Cookies.get('yourHistory') || '[]');
+      if (yourHistory.length > 0) {
+        const videoId = yourHistory[0]['videoId'];
+
+        const url = 'https://www.youtube.com/watch?v=' + videoId;
+        setYoutubeUrl(url);
+        const lyric = await FormPost.fetchLyricFromDB(videoId);
+        if (lyric == null) {
+          setLyric("");
+        } else {
+          setLyric(lyric);
+        }
+      }
+    };
+
+    fetchLastSongData();
+  }, []);
+
+
+  const resetForms = () => {
     setYoutubeUrl("");
     setLyric("");
     setUrlError(null);
     setError(null);
     setLyricFormUrlWarningMessage([]);
     setLyricFormUrlErrorMessage("");
-  }, [setYoutubeUrl, setLyric]);
+  };
 
   const extractVideoId = (youtubeUrl: string): string | null => {
     const regex = /^(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})(?:\S+)?$/;
