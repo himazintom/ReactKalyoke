@@ -2,13 +2,13 @@ import React, { useState, useCallback, useRef } from 'react';
 import { Box, Button, Typography, TextField } from '@mui/material';
 import CircularProgress from '@mui/material/CircularProgress';
 import * as FormPost from '../FormPost';
-import { makeTimestampAndLyricList } from './TimeStamps';
 import { FormErrorMessages } from './FormErrorMessages';
-import TimestampAndLyric from '../types/TimestampAndLyric';
+
 
 interface PlayerFormProps {
-  onPrepareKaraoke: (videoId: string, formTimestampAndLyric: TimestampAndLyric[], isTimestamped: boolean) => Promise<void>;
+  onPrepareKaraoke: (videoId: string, lyric: string) => Promise<void>;
 }
+
 
 export const PlayerForm: React.FC<PlayerFormProps> = ({
   onPrepareKaraoke,
@@ -173,14 +173,13 @@ export const PlayerForm: React.FC<PlayerFormProps> = ({
       beforeVideoId.current = videoId;
       beforeLyric.current = lyric;
 
-      const [timestampAndLyricList, isTimestamped] = makeTimestampAndLyricList(lyric, setYoutubeUrlErrorMessage, setLyricFormUrlWarningMessage);
-      
-      await onPrepareKaraoke(videoId, timestampAndLyricList, isTimestamped);
+      await onPrepareKaraoke(videoId, lyric);
     } catch (error) {
       console.error("Error preparing karaoke:", error);
     } finally {
       setIsPrepareKaraoke(false);
     }
+
   }, [onPrepareKaraoke, youtubeUrl, lyric]);
 
   return (

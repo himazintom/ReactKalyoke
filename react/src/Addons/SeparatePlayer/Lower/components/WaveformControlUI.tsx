@@ -122,7 +122,6 @@ export const WaveformControlUI = forwardRef<WaveformControlUIHandles, WaveformCo
       }
     } catch (error) {
       if ((error as any).message === '新しい読み込みリクエストが開始されました') {
-        console.log('古い読み込みリクエストがキャンセルされました');
       } else {
         console.error('prepareWaveform エラー:', error);
       }

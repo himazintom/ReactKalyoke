@@ -85,16 +85,12 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
 
     // handleEndedMusic の関数自体は一度だけ生成して固定する
     const handleEndedMusic = useCallback(async () => {
-      console.log("handleEndedMusic!!");
       try {
         if (latestIsLooping.current) {
-          console.log("handleLooping!!");
           handleLooping();
         } else if (latestIsShuffling.current) {
-          console.log("handleShuffling!!");
           await handleShuffling();
         } else {
-          console.log("stopAllAudio!!");
           stopAllAudio();
         }
       } catch (error) {
@@ -132,7 +128,6 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
     
     // onToggleLoop の修正
     const handleToggleLoop = () => {
-      console.log("handleToggleLoop!!");
       setIsLooping((prevIsLooping) => {
         const newIsLooping = !prevIsLooping;
         Cookies.set('loop', String(newIsLooping), { path: '/', expires: 31 });
@@ -142,7 +137,6 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
           setIsShuffling(false);
           Cookies.set('shuffle', 'false', { path: '/', expires: 31 });
         }
-        console.log("newIsLooping", newIsLooping);
         return newIsLooping;
       });
     };
@@ -150,7 +144,6 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
 
     // onToggleShuffle の修正
     const handleToggleShuffle = () => {
-      console.log("handleToggleShuffle!!");
       setIsShuffling((prevIsShuffling) => {
         const newIsShuffling = !prevIsShuffling;
         Cookies.set('shuffle', String(newIsShuffling), { path: '/', expires: 31 });
@@ -160,14 +153,11 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
           setIsLooping(false);
           Cookies.set('loop', 'false', { path: '/', expires: 31 });
         }
-        console.log("newIsShuffling", newIsShuffling);
         return newIsShuffling;
       });
     }
 
     useEffect(() => {
-      console.log("UseEffect isLooping", isLooping);
-      console.log("UseEffect isShuffling", isShuffling);
     }, [isLooping, isShuffling]);
 
 
@@ -297,10 +287,8 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
     }
 
     const prepareWaveforms = async (audioPath: string) => {//もし、準備ができたときにすでに再生されていたら、現在の再生地点に波形を合わせる
-      console.log("prepareWaveforms");
       await waveformUIRef.current?.prepareWaveforms(audioPath);
       if (isPlayingRef.current) {
-        console.log("prepareWaveforms playWaveforms");
         waveformUIRef.current?.playWaveforms();
         syncSeekOfMusicAndWaveforms();
       }
@@ -384,6 +372,7 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
           }
         }
       }, 100);
+
 
       const syncInterval = setInterval(() => {
         syncSeekOfMusicAndYoutubeApi();

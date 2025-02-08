@@ -99,7 +99,6 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
   }
 
   useEffect(() => {//音量が変更されて、関数が更新されてからイベントを登録しなおし
-    //console.log("useEffect handleEndedMusic Changed");
     if(instAudioRef.current){
       instAudioRef.current.removeEventListener('ended', handleEndedMusic);
       instAudioRef.current.addEventListener('ended', handleEndedMusic);

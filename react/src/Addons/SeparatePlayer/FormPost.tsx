@@ -202,6 +202,7 @@ export const fetchLyricUpdateDateFromDB = async (videoId: string): Promise<strin
   try {
     const response = await fetchData(`${apiUrl}/api/fetch_lyric_update_date`, { videoId });
     if (response && typeof response.lyricUpdateDate === "string") {
+      
       return response.lyricUpdateDate;
     } else if (response.lyricUpdateDate == null) {//DBに記録が無かったら「2024-01-01 00:00:00」を返す
       return "2024-01-01 00:00:00";

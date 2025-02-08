@@ -33,27 +33,26 @@ export const SeparatePlayer: React.FC<{ path: string }> = ({ path }) => {
 
   const shufflePrepareKaraoke = async (): Promise<boolean> => {//ControlPlayerから呼び出される関数
     const musicList = await FormPost.fetchRandomMusics(1);//音源をランダムに取得
-    const [timestampAndLyricList, isTimestamped] = makeTimestampAndLyricList(musicList[0].lyric);//歌詞をタイムスタンプと歌詞に分割
-    await prepareKaraoke(musicList[0].videoId, timestampAndLyricList, isTimestamped);//カラオケを準備
+    await prepareKaraoke(musicList[0].videoId, musicList[0].lyric);//カラオケを準備
     return true;
+
   }
 
   //PlayerFormから必要な情報を引数として受け取り呼び出す関数：Lowerのコンポーネントたちと連携を取り、カラオケの準備をする関数②
-  const prepareKaraoke = async (videoId: string, formTimestampAndLyric: TimestampAndLyric[], isTimestamped: boolean): Promise<void> => {
-    const lyricStrings = formTimestampAndLyric
-        .map(item => isTimestamped ? `${item.timestamp} ${item.lyric}` : `${item.lyric}`) // lyricが空でない場合のみ追加
-    let data: VideoData;
+  const prepareKaraoke = async (videoId: string, lyric: string): Promise<void> => {
+    const [timestampAndLyricList, isTimestamped] = makeTimestampAndLyricList(lyric);//歌詞をタイムスタンプと歌詞に分割
     try {
       const youtubeUrl: string = `https://www.youtube.com/watch?v=${videoId}`;
-      const separateData = await FormPost.separateMusic(youtubeUrl, videoId, lyricStrings.join('\n')); // 曲情報を取得
+      const separateData = await FormPost.separateMusic(youtubeUrl, videoId, lyric); // 曲情報を取得
       if(separateData){//履歴を更新
-        data = ({
+        const data = ({
           videoId: videoId,
           title: separateData.title,
-          timeStampAndLyricList: formTimestampAndLyric,
+          timeStampAndLyricList: timestampAndLyricList,
           path: separateData.path
         }) as VideoData;
         await karaokePlayerRef.current?.prepareKaraokePlayer(data, isTimestamped);
+
         updateHistory(separateData.title, separateData.history[0].videoId);
       }
     } catch (error) {
