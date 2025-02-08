@@ -286,7 +286,7 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
   };
 
   return {
-    AudioRef: isPitchMode ? originalAudioRef : instAudioRef,
+    audioRef: isPitchMode ? originalAudioRef : instAudioRef,
     currentPitch: pitchValue,
     prepareAudio,
     playAudio,

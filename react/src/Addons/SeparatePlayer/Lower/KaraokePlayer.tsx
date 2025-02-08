@@ -216,7 +216,7 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
     
     // --- Audio の準備 ---
     const {
-      AudioRef: audioRef,
+      audioRef,
       currentPitch,
       prepareAudio,
       playAudio,
@@ -365,10 +365,10 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
         if (isPlaying) {
           const time = audioRef.current?.currentTime;
           if (time !== undefined) {
-            setCurrentTime(time);
+            setCurrentTime(time);//現在の再生位置にシークバーのUIを移動させる
           }
           if (isTimestamped) {
-            updatePlayerTimestampLyric();
+            updatePlayerTimestampLyric();//タイムスタンプがある場合は、歌詞の表示を更新する
           }
         }
       }, 100);
@@ -393,6 +393,7 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
             time >= tsLyric.timestamp &&
             (index === timestampAndLyricList.length - 1 || time < timestampAndLyricList[index + 1].timestamp)
         );
+        console.log("currentIndex", currentIndex);
         lyricUIRef.current?.setCurrentLyricIndex(currentIndex);
       }
     };

@@ -41,9 +41,19 @@ export const LyricUI = forwardRef<LyricUIHandles, LyricUIProps>(({isLyricCC}, re
     });
   }
 
+  useEffect(() => {
+    if (lyricLineRef.current[currentLyricIndex]) {
+      lyricLineRef.current[currentLyricIndex].scrollIntoView({
+        behavior: 'smooth',  // スムーズにスクロール
+        block: 'center',     // 中央に表示
+      });
+    }
+  }, [currentLyricIndex]);
+
   return(
     <Box
       sx={{
+
         position: 'absolute',
         maxWidth: '80%',
         height: {
