@@ -19,23 +19,57 @@ export const HistorySection: React.FC<SectionProps> = ({ title, history }) => {
   return (
     <Box sx={{
       color: 'white',
-      backgroundColor: '#1a1a1a',
-      borderRadius: '8px',
-      marginBottom: { xs: 2, md: 0 },
-      padding: '16px',
-      margin: '2px'
+      background: 'linear-gradient(145deg, rgba(26,26,26,0.9) 0%, rgba(38,38,38,0.8) 100%)',
+      borderRadius: '16px',
+      padding: '20px',
+      boxShadow: '0 8px 32px 0 rgba(0,0,0,0.2)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255,255,255,0.1)',
     }}>
-      <Typography variant='h5' sx={{ marginBottom: 2 }}>{title}</Typography>
+      <Typography 
+        variant='h5' 
+        sx={{ 
+          marginBottom: 3,
+          fontWeight: 600,
+          background: 'linear-gradient(45deg, #fff, #ccc)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+        }}
+      >
+        {title}
+      </Typography>
       {data.length > 0 ? (
         data.map((item, index) => (
-          <Typography key={index} sx={{ marginBottom: 1 }}>
-            <Link href={`${hostUrl}/search_id/${item.videoId}`} sx={{ color: 'inherit', textDecoration: 'underline' }}>
+          <Box
+            key={index}
+            sx={{
+              marginBottom: '2px',
+              padding: '6px',
+              borderRadius: '8px',
+              background: 'rgba(255,255,255,0.05)',
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                background: 'rgba(255,255,255,0.1)',
+              }
+            }}
+          >
+            <Link 
+              href={`${hostUrl}/search_id/${item.videoId}`} 
+              sx={{ 
+                color: 'inherit',
+                textDecoration: 'none',
+                display: 'block',
+                '&:hover': {
+                  color: '#4a9eff'
+                }
+              }}
+            >
               {item.title}
             </Link>
-          </Typography>
+          </Box>
         ))
       ) : (
-        <Typography>No data available</Typography>
+        <Typography sx={{ opacity: 0.7 }}>No data available</Typography>
       )}
     </Box>
   );

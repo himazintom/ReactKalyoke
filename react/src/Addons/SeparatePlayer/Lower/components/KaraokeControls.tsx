@@ -72,13 +72,13 @@ const KaraokeControls: React.FC<KaraokeControlsProps> = ({
       onClick: onToggleLyricCC,
       isActive: isLyricCC,
       icon: <FormatAlignCenterIcon />,
-      position: { bottom: bottomButtonsLine, left: '70px' },
+      position: { bottom: bottomButtonsLine, left: '80px' },
     },
     {
       onClick: onToggleWaveform,
       isActive: isVisibleWaveform,
       icon: <GraphicEqIcon />,
-      position: { bottom: bottomButtonsLine, left: '130px' },
+      position: { bottom: bottomButtonsLine, left: '140px' },
     },
     {
       onClick: onToggleFullScreen,
@@ -137,7 +137,7 @@ const KaraokeControls: React.FC<KaraokeControlsProps> = ({
           sx={{
             position: 'absolute',
             bottom: bottomButtonsLine,
-            left: { xs: 'auto', lg: '190px' },
+            left: { xs: 'auto', lg: '200px' },
             display: 'flex',
             justifyContent: { xs: 'flex-start', md: 'center'},
             color: 'white',

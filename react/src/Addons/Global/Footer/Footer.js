@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography, Link } from '@mui/material';
 
-import { Credit } from './Credit';
+import { Credit } from './oldCredit';
 
 
 export const Footer = () => {

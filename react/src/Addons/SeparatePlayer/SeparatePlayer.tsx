@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Box, useMediaQuery, useTheme } from '@mui/material';
 import Cookies from 'js-cookie';
+import { AnimatedBackground } from '../Global/Background/AnimatedBackground';
 
 import VideoData from './types/VideoData'
 import { PlayerForm } from './Upper/PlayerForm';
@@ -56,42 +57,90 @@ export const SeparatePlayer: React.FC<{ path: string }> = ({ path }) => {
   };
 
   return (
-    <>
-      <Box>
-        <Box sx={{//Upper Component
+    <Box sx={{
+      minHeight: '100vh',
+      position: 'relative',
+      padding: { xs: 1, md: 3 },
+    }}>
+      <AnimatedBackground />
+      <Box sx={{
+        maxWidth: '1600px',
+        margin: '0 auto',
+      }}>
+        {/* Upper Component */}
+        <Box sx={{
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
           justifyContent: 'space-between',
           alignItems: { xs: 'center', md: 'flex-start' },
-          padding: 2,
+          gap: 3,
+          mb: 4,
         }}>
-          <Box sx={{ width: { xs: '100%', md: '25%' } }}>
+          {/* おすすめセクション */}
+          <Box sx={{
+            width: { xs: '100%', md: '25%' }
+          }}>
             <HistorySection title='あなたへのオススメ！' history={recommendation} />
           </Box>
-          <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+
+          {/* メインフォーム */}
+          <Box sx={{
+            width: { xs: '100%', md: '50%' },
+            backdropFilter: 'blur(10px)',
+            backgroundColor: 'rgba(255, 255, 255, 0.05)',
+            borderRadius: '16px',
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+            border: '1px solid rgba(255, 255, 255, 0.18)',
+            transition: 'transform 0.3s ease',
+            '&:hover': {
+              boxShadow: '0 8px 40px 0 rgba(31, 38, 135, 0.37)',
+            },
+          }}>
             <PlayerForm onPrepareKaraoke={prepareKaraoke} />
           </Box>
-          {/* md以上の場合は、上部に履歴を表示する */}
-          {isMd && 
-            <Box sx={{ width: '25%' }}>
-              <HistorySection title='あなたの履歴' history={yourHistory} />
-              <HistorySection title='みんなの履歴' history={everyoneHistory} />
+
+          {/* 履歴セクション（PC表示） */}
+          {isMd && (
+            <Box sx={{
+              width: '25%',
+            }}>
+              <Box sx={{ mb: 3 }}>
+
+                <HistorySection title='あなたの履歴' history={yourHistory} />
+              </Box>
+              <Box>
+                <HistorySection title='みんなの履歴' history={everyoneHistory} />
+              </Box>
             </Box>
-          }
+          )}
         </Box>
+
+        {/* カラオケプレイヤー */}
+        <Box sx={{
+          borderRadius: '16px',
+          overflow: 'hidden',
+        }}>
+          <KaraokePlayer
+            ref={karaokePlayerRef}
+            isPitchMode={isPitchMode}
+            shufflePrepareKaraoke={shufflePrepareKaraoke}
+          />
+        </Box>
+
+        {/* 履歴セクション（モバイル表示） */}
+        {!isMd && (
+          <Box sx={{
+            width: '100%',
+            mt: 4,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 3,
+          }}>
+            <HistorySection title='あなたの履歴' history={yourHistory} />
+            <HistorySection title='みんなの履歴' history={everyoneHistory} />
+          </Box>
+        )}
       </Box>
-      <KaraokePlayer 
-        ref={karaokePlayerRef}
-        isPitchMode={isPitchMode}
-        shufflePrepareKaraoke={shufflePrepareKaraoke}
-      />
-      {/* md未満の場合は、下部に履歴を表示する */}
-      {!isMd && 
-        <Box sx={{ width: '100%' }}>
-          <HistorySection title='あなたの履歴' history={yourHistory} />
-          <HistorySection title='みんなの履歴' history={everyoneHistory} />
-        </Box>
-      }
-    </>
+    </Box>
   );
 };

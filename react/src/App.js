@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Helmet } from 'react-helmet';
-import { Header } from './Addons/Global/Header/Header';
-import { Footer } from './Addons/Global/Footer/Footer';
+import { Header } from './Addons/Global/Header/Header.tsx';
+import { Footer } from './Addons/Global/Footer/Footer.tsx';
 import './Addons/Global/MainBackground.scss';
 
 import { Player } from './Addons/PlayerPage/Player';

@@ -274,7 +274,7 @@ export const useAudioManager = ({ isPitchMode, handleEndedMusic }: UseAudioManag
 
   const handlePitchChange = (change: number) => {
     setPitchValue((prevPitch) => {
-      const newPitch = prevPitch + change;
+      const newPitch = Math.max(-6, Math.min(6, prevPitch + change));
       if(instPitchShiftRef.current){
         instPitchShiftRef.current.pitch = newPitch;
       }

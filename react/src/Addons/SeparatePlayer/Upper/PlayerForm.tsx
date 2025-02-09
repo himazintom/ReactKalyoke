@@ -204,104 +204,225 @@ export const PlayerForm: React.FC<PlayerFormProps> = ({
   }, [onPrepareKaraoke, youtubeUrl, lyric]);
 
   return (
-    <>
-      <Box sx={{
-        backgroundColor: '#1a1a1a',
-        borderRadius: '8px',
-        color: 'white',
-        padding: '16px',
-        margin: '2px'
-      }}>
-        <Box sx={{ marginBottom: 2 }}>
-          <FormErrorMessages
-            youtubeUrlErrorMessage={youtubeUrlErrorMessage}
-            lyricFormErrorMessage={lyricFormErrorMessage}
-            lyricFormWarningMessage={lyricFormWarningMessage}
-          />
-          <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h4">YoutubeURL</Typography>
-            <Button
-              variant='contained'
-              onClick={resetForms}
-              sx={{ width: '200px', height: '50px', backgroundColor: '#333', color: 'white', '&:hover': { backgroundColor: '#111' } }}
-            >
-              リセット
-            </Button>
-          </Box>
-          <TextField
-            fullWidth
-            variant="outlined"
-            value={youtubeUrl}
-            onChange={handleUrlChange} // 入力変更時の処理
-            onPaste={handleUrlPaste}   // 貼り付け時の処理
-            onKeyDown={handleUrlEnterKeyDown} // Enter キー押下時の処理
-            placeholder="https://www.youtube.com/watch?v=..."
-            InputProps={{
-              style: { backgroundColor: 'white', color: 'black' },
+    <Box sx={{
+      background: 'linear-gradient(145deg, rgba(26,26,26,0.95) 0%, rgba(38,38,38,0.9) 100%)',
+      borderRadius: '20px',
+      padding: '24px',
+      boxShadow: '0 8px 32px 0 rgba(0,0,0,0.3)',
+      backdropFilter: 'blur(10px)',
+      border: '1px solid rgba(255,255,255,0.1)',
+    }}>
+      <FormErrorMessages
+        youtubeUrlErrorMessage={youtubeUrlErrorMessage}
+        lyricFormErrorMessage={lyricFormErrorMessage}
+        lyricFormWarningMessage={lyricFormWarningMessage}
+      />
+      
+      {/* URLセクション */}
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center',
+          mb: 2 
+        }}>
+          <Typography 
+            variant="h4" 
+            sx={{
+              background: 'linear-gradient(45deg, #fff, #ccc)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 600
             }}
-            error={Boolean(urlError)}
-            helperText={urlError}
-          />
-        </Box>
-        <Box sx={{ marginBottom: 2 }}>
-          <Box sx={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Typography variant="h4">歌詞</Typography>
-          </Box>
-          <TextField
-            fullWidth
-            multiline
-            rows={10}
-            variant='outlined'
-            value={lyric}
-            onChange={handleLyricChange}
-            placeholder='歌詞をここに入力してください'
-            InputProps={{
-              style: { backgroundColor: 'white', color: 'black' },
-            }}
-            inputRef={lyricTextFieldRef}
-          />
-        </Box>
-        
-        {error && (
-          <Typography color="error" sx={{ marginBottom: 2 }}>
-            {error}
+          >
+            YoutubeURL
           </Typography>
-        )}
-        
-        <Box sx={{ textAlign: 'center' }}>
-          {isAutoSearchLyric ? (     
-            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2 }}>
-              <CircularProgress size={24} sx={{ color: 'white' }} />
-              <Typography sx={{ color: 'white' }}>
-                歌詞を検索中...
-              </Typography>
-            </Box>
-          ) : (
-            isPrepareKaraoke ? (    
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 2, height: '50px' }}>
-                <CircularProgress sx={{ color: 'white' }} />
-                <Typography sx={{ color: 'white' }}>
-                  カラオケの準備をしています...
-                </Typography>
-              </Box>
-            ) : (
-              <Button
-                variant='contained'
-                onClick={prepareKaraoke}
-                sx={{ 
-                  width: '200px', 
-                  height: '50px', 
-                  backgroundColor: '#666', 
-                  color: 'white', 
-                  '&:hover': { backgroundColor: '#444' } 
-                }}
-              >
-                Sing
-              </Button>
-            )
-          )}
+          <Button
+            variant='contained'
+            onClick={resetForms}
+            sx={{
+              backgroundColor: 'rgba(255,255,255,0.1)',
+              color: 'white',
+              borderRadius: '12px',
+              padding: '10px 24px',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                backgroundColor: 'rgba(255,255,255)',
+                transform: 'translateY(-2px)'
+              }
+            }}
+          >
+            リセット
+          </Button>
         </Box>
+        <TextField
+          fullWidth
+          variant="outlined"
+          value={youtubeUrl}
+          onChange={handleUrlChange}
+          onPaste={handleUrlPaste}
+          onKeyDown={handleUrlEnterKeyDown}
+          placeholder="https://www.youtube.com/watch?v=..."
+          InputProps={{
+            sx: {
+              backgroundColor: 'rgba(255,255,255,0.8)',
+              color: 'black',
+              borderRadius: '12px',
+              '& fieldset': {
+                borderColor: 'rgba(255,255,255,0.2)',
+              },
+              '&:hover fieldset': {
+                borderColor: 'rgba(255,255,255,0.3)',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: 'rgba(255,255,255,0.4)',
+              }
+            }
+          }}
+          error={Boolean(urlError)}
+          helperText={urlError}
+        />
       </Box>
-    </>
+
+      {/* 歌詞セクション */}
+      <Box sx={{ mb: 4 }}>
+        <Typography 
+          variant="h4" 
+          sx={{
+            mb: 2,
+            background: 'linear-gradient(45deg, #fff, #ccc)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            fontWeight: 600
+          }}
+        >
+          歌詞
+        </Typography>
+        <TextField
+          fullWidth
+          multiline
+          rows={10}
+          variant='outlined'
+          value={lyric}
+          onChange={handleLyricChange}
+          placeholder='歌詞をここに入力してください'
+          inputRef={lyricTextFieldRef}
+          InputProps={{
+            sx: {
+              backgroundColor: 'rgba(255,255,255)',
+              color: 'black',
+              borderRadius: '12px',
+              '& fieldset': {
+                borderColor: 'rgba(255,255,255,0.2)',
+              },
+
+              '&:hover fieldset': {
+                borderColor: 'rgba(255,255,255,0.3)',
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: 'rgba(255,255,255,0.4)',
+              },
+              '& textarea': {
+                scrollbarWidth: 'thin',
+                '&::-webkit-scrollbar': {
+                  width: '8px',
+                  background: 'transparent',
+                },
+                '&::-webkit-scrollbar-track': {
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: '4px',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  background: 'linear-gradient(45deg, #4a9eff 30%, #2979ff 90%)',
+                  borderRadius: '4px',
+                  border: '2px solid transparent',
+                  backgroundClip: 'padding-box',
+                  '&:hover': {
+                    background: 'linear-gradient(45deg, #5aafff 30%, #3989ff 90%)',
+                  }
+                },
+              },
+            }
+          }}
+        />
+      </Box>
+
+      {error && (
+        <Typography 
+          color="error" 
+          sx={{ 
+            mb: 2,
+            textAlign: 'center',
+            fontWeight: 500
+          }}
+        >
+          {error}
+        </Typography>
+      )}
+
+      {/* アクションボタン */}
+      <Box sx={{ textAlign: 'center' }}>
+        {isAutoSearchLyric ? (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            gap: 2 
+          }}>
+            <CircularProgress 
+              size={24} 
+              sx={{ 
+                color: '#4a9eff'
+              }} 
+            />
+            <Typography sx={{ color: 'white' }}>
+              歌詞を検索中...
+            </Typography>
+          </Box>
+        ) : isPrepareKaraoke ? (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            gap: 2, 
+            height: '56px' 
+          }}>
+            <CircularProgress 
+              sx={{ 
+                color: '#4a9eff'
+              }} 
+            />
+            <Typography sx={{ color: 'white' }}>
+              カラオケの準備をしています...
+            </Typography>
+          </Box>
+        ) : (
+          <Button
+            variant='contained'
+            onClick={prepareKaraoke}
+            disabled={isAutoSearchLyric || isPrepareKaraoke}
+            sx={{
+              width: '200px',
+              height: '56px',
+              background: 'linear-gradient(45deg, #4a9eff 30%, #2979ff 90%)',
+              borderRadius: '12px',
+              fontSize: '1.2rem',
+              fontWeight: 600,
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 20px rgba(41,121,255,0.4)'
+              },
+              '&:disabled': {
+                background: 'rgba(255,255,255,0.1)',
+                color: 'rgba(255,255,255,0.4)'
+              }
+            }}
+          >
+            Sing
+          </Button>
+        )}
+      </Box>
+    </Box>
   )
 };

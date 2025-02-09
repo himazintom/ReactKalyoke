@@ -21,7 +21,6 @@ import Overlay from './components/Overlay';
 import KaraokeControls from './components/KaraokeControls';
 import TimestampAndLyric from '../types/TimestampAndLyric';
 import VideoData from '../types/VideoData';
-import { PitchShift } from 'tone';
 
 interface KaraokePlayerProps {
   isPitchMode: boolean;
@@ -65,7 +64,6 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
     const [isLooping, setIsLooping] = useState<boolean>(false);
     const [isShuffling, setIsShuffling] = useState<boolean>(false);
     const [isShufflePlaying, setIsShufflePlaying] = useState<boolean>(false);
-    const pitchShiftRef = useRef<PitchShift | null>(null);
 
     const currentTimeRef = useRef(currentTime);//waveformsの非同期処理のため
     const isPlayingRef = useRef(isPlaying);
@@ -109,7 +107,7 @@ export const KaraokePlayer = forwardRef<KaraokePlayerHandles, KaraokePlayerProps
     //コントロールのCookieを読み込む
     useEffect(() => {
       const lyricCCValue = Cookies.get('lyricCC');
-      const isLyricCC = lyricCCValue === 'true'; // 文字列をBooleanに変換
+      const isLyricCC = lyricCCValue === undefined ? true : lyricCCValue === 'true';
       setIsLyricCC(isLyricCC);
   
       const visibleWaveformValue = Cookies.get('visibleWaveform');
